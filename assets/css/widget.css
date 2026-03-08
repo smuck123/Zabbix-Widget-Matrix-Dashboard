@@ -201,6 +201,9 @@
     width: 148px;
     min-height: 46px;
     padding: 5px 8px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
     border: 1px solid color-mix(in srgb, var(--mf-link-color, #6bff9e) 75%, #ffffff 8%);
     border-radius: 10px;
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.90), rgba(2, 14, 10, 0.86));
@@ -228,6 +231,37 @@
         0 0 24px rgba(255, 95, 95, 0.55),
         0 0 40px rgba(255, 95, 95, 0.36),
         inset 0 0 14px rgba(255, 95, 95, 0.24);
+}
+
+
+.mf-link-label:active {
+    cursor: grabbing;
+}
+
+.mf-link-label-theme-0 { }
+.mf-link-label-theme-1 { border-style: dotted; background: rgba(2, 8, 6, 0.92); }
+.mf-link-label-theme-2 { min-height: 40px; padding: 4px 7px; background: rgba(0, 0, 0, 0.96); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+.mf-link-label-theme-3 { width: 136px; border-radius: 8px; }
+.mf-link-label-theme-4 { border-radius: 999px; width: 158px; padding: 5px 10px; }
+.mf-link-label-theme-5 { background: linear-gradient(180deg, rgba(12, 30, 26, 0.84), rgba(4, 10, 8, 0.86)); backdrop-filter: blur(2px); }
+.mf-link-label-theme-6 { background: #09110e; border-color: rgba(110, 255, 150, 0.45); box-shadow: inset 0 0 0 1px rgba(110, 255, 150, 0.2); }
+.mf-link-label-theme-7 { border-radius: 5px; background-image: linear-gradient(rgba(170,255,210,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(170,255,210,0.1) 1px, transparent 1px); background-size: 8px 8px, 8px 8px; }
+.mf-link-label-theme-8 { animation: mf-link-pulse 1.8s ease-in-out infinite; }
+.mf-link-label-theme-9 { border-color: rgba(115, 210, 255, 0.8); box-shadow: 0 0 18px rgba(115, 210, 255, 0.35), inset 0 0 12px rgba(115, 210, 255, 0.14); }
+.mf-link-label-theme-10 { background: linear-gradient(180deg, rgba(10, 18, 15, 0.88), rgba(3, 8, 6, 0.82)); border-color: rgba(130, 175, 150, 0.5); }
+.mf-link-label-theme-11 { background: linear-gradient(180deg, rgba(26, 34, 38, 0.94), rgba(9, 14, 18, 0.95)); border-color: rgba(180, 210, 220, 0.45); }
+.mf-link-label-theme-12 { border-color: rgba(255, 195, 95, 0.7); box-shadow: 0 0 16px rgba(255, 185, 95, 0.28), inset 0 0 10px rgba(255, 185, 95, 0.15); }
+.mf-link-label-theme-13 { border-color: rgba(180, 130, 255, 0.75); box-shadow: 0 0 16px rgba(180, 130, 255, 0.25), inset 0 0 10px rgba(180, 130, 255, 0.16); }
+.mf-link-label-theme-14 { border-radius: 12px; background: linear-gradient(180deg, rgba(14, 24, 40, 0.92), rgba(5, 10, 22, 0.95)); border-color: rgba(120, 180, 255, 0.62); }
+.mf-link-label-theme-15 { border-color: rgba(130, 255, 120, 0.62); background: linear-gradient(90deg, rgba(8,20,14,0.92), rgba(14,30,8,0.9)); }
+.mf-link-label-theme-16 { border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(180,255,220,0.2); }
+.mf-link-label-theme-17 { width: 124px; min-height: 38px; padding: 4px 6px; }
+.mf-link-label-theme-18 { border-style: dashed; background: linear-gradient(180deg, rgba(16, 22, 18, 0.94), rgba(8, 10, 9, 0.95)); }
+.mf-link-label-theme-19 { border-radius: 4px; background: rgba(4, 14, 11, 0.95); box-shadow: 0 0 10px rgba(90, 255, 170, 0.28), inset 0 0 0 1px rgba(90, 255, 170, 0.25); }
+
+@keyframes mf-link-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
 }
 
 .mf-link-title {
