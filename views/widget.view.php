@@ -43,10 +43,27 @@ $shortText = static function(string $value, int $limit = 28): string {
 };
 
 $normalizeId = static function($value): string {
+
     $id = trim((string) $value);
     return ($id !== '' && $id !== '0') ? $id : '';
 };
 
+
+$parsePercent = static function(string $value): int {
+    if (preg_match('/-?\d+(?:\.\d+)?/', $value, $m) !== 1) {
+        return 0;
+    }
+
+    $num = (int) round((float) $m[0]);
+    if ($num < 0) {
+        return 0;
+    }
+    if ($num > 100) {
+        return 100;
+    }
+
+    return $num;
+};
 $getDrilldownUrl = static function(string $hostid, string $itemid = '', int $mode = WidgetForm::LINK_DRILLDOWN_AUTO): string {
     if ($mode === WidgetForm::LINK_DRILLDOWN_PROBLEMS) {
         if ($hostid !== '' && $hostid !== '0') {
@@ -252,12 +269,15 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
+            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_EXTRA_PANEL, WidgetForm::NODE_THEME_BOX),
             'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'disk' => trim((string) ($data['node'.$i.'_disk_value'] ?? '')),
             'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
             'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
+            'disk_itemid' => $normalizeId($data['node'.$i.'_disk_itemid'] ?? ''),
             'problem_count' => $clampInt($data['node'.$i.'_problem_count'] ?? 0, 0, 9999, 0),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => $clampInt($data['node'.$i.'_x'] ?? 10, 2, 90, 10),
@@ -304,12 +324,15 @@ else {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
+            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_EXTRA_PANEL, WidgetForm::NODE_THEME_BOX),
             'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'disk' => trim((string) ($data['node'.$i.'_disk_value'] ?? '')),
             'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
             'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
+            'disk_itemid' => $normalizeId($data['node'.$i.'_disk_itemid'] ?? ''),
             'problem_count' => $clampInt($data['node'.$i.'_problem_count'] ?? 0, 0, 9999, 0),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => min(86, max(5, $x)),
@@ -378,6 +401,8 @@ if (!$matrix_values) {
 }
 
 $durations = $getMatrixDurations($matrix_speed);
+$summary_high = $clampInt($data['summary_high'] ?? 0, 0, 99999, 0);
+$summary_disaster = $clampInt($data['summary_disaster'] ?? 0, 0, 99999, 0);
 
 $svg = new CTag('svg', true);
 $svg->setAttribute('class', 'mf-svg');
@@ -385,6 +410,7 @@ $svg->setAttribute('viewBox', '0 0 1000 700');
 $svg->setAttribute('preserveAspectRatio', 'none');
 
 $link_labels_layer = (new CDiv())->addClass('mf-link-label-layer');
+$link_lane_counts = [];
 
 for ($i = 1; $i <= $link_count; $i++) {
     $from = $clampInt($data['link'.$i.'_from'] ?? '', 1, $node_count, 1);
@@ -407,7 +433,7 @@ for ($i = 1; $i <= $link_count; $i++) {
 
     $style = $getTrafficStyle($traffic);
     $has_error = (($data['link'.$i.'_has_error'] ?? '0') === '1');
-    $route_style = $clampInt($data['link'.$i.'_style'] ?? 0, 0, 2, 0);
+    $route_style = $clampInt($data['link'.$i.'_style'] ?? 0, WidgetForm::LINK_STYLE_ELBOW, WidgetForm::LINK_STYLE_ZIGZAG, WidgetForm::LINK_STYLE_ELBOW);
     $show_label = $clampInt($data['link'.$i.'_show_label'] ?? 1, 0, 1, 1) === 1;
     $in_hostid = $normalizeId($data['link'.$i.'_in_hostid'] ?? '');
     $out_hostid = $normalizeId($data['link'.$i.'_out_hostid'] ?? '');
@@ -449,11 +475,19 @@ for ($i = 1; $i <= $link_count; $i++) {
         $end_y   -= ($dy >= 0) ? $node_box_h : -$node_box_h;
     }
 
-    $lane = (($i % 5) - 2) * 18;
+    $pair_key = ($from < $to) ? ($from.'-'.$to) : ($to.'-'.$from);
+    $lane_index = $link_lane_counts[$pair_key] ?? 0;
+    $link_lane_counts[$pair_key] = $lane_index + 1;
+    $lane_direction = ($lane_index % 2 === 0) ? 1 : -1;
+    $lane_level = (int) floor($lane_index / 2) + 1;
+    $lane = $lane_direction * (10 + ($lane_level * 12));
     $path_d = '';
     $label_points = [];
 
-    if ($route_style === WidgetForm::LINK_STYLE_STRAIGHT) {
+    $line_class = 'mf-svg-line';
+    $ball_class = 'mf-svg-ball';
+
+    if ($route_style === WidgetForm::LINK_STYLE_STRAIGHT || $route_style === WidgetForm::LINK_STYLE_FILE_TRANSFER) {
         $path_d = 'M'.round($start_x, 2).','.round($start_y, 2).' L'.round($end_x, 2).','.round($end_y, 2);
         $label_points = [[$start_x, $start_y], [$end_x, $end_y]];
 
@@ -473,23 +507,30 @@ for ($i = 1; $i <= $link_count; $i++) {
         $line->setAttribute('y2', (string) round($end_y, 2));
         $line->setAttribute('stroke', $style['color']);
         $line->setAttribute('stroke-width', (string) $style['width']);
-        $line->setAttribute('class', 'mf-svg-line');
 
+        if ($route_style === WidgetForm::LINK_STYLE_FILE_TRANSFER) {
+            $line_class = 'mf-svg-line mf-svg-line-file-transfer';
+            $ball_class = 'mf-svg-ball mf-svg-ball-file-transfer';
+            $line->setAttribute('stroke-dasharray', '22 8');
+        }
+
+        $line->setAttribute('class', $line_class);
         $svg->addItem($glow);
         $svg->addItem($line);
     }
-    elseif ($route_style === WidgetForm::LINK_STYLE_CURVED) {
+    elseif ($route_style === WidgetForm::LINK_STYLE_CURVED || $route_style === WidgetForm::LINK_STYLE_JUMPING) {
+        $curve_lane = ($route_style === WidgetForm::LINK_STYLE_JUMPING) ? ($lane * 1.6) : $lane;
         $c1x = $start_x + (($end_x - $start_x) * 0.35);
-        $c1y = $start_y + $lane;
+        $c1y = $start_y + $curve_lane;
         $c2x = $start_x + (($end_x - $start_x) * 0.65);
-        $c2y = $end_y + $lane;
+        $c2y = $end_y + $curve_lane;
 
         $path_d = 'M'.round($start_x, 2).','.round($start_y, 2)
             .' C'.round($c1x, 2).','.round($c1y, 2)
             .' '.round($c2x, 2).','.round($c2y, 2)
             .' '.round($end_x, 2).','.round($end_y, 2);
 
-        $label_points = [[$start_x, $start_y], [($start_x + $end_x) / 2, (($start_y + $end_y) / 2) + $lane], [$end_x, $end_y]];
+        $label_points = [[$start_x, $start_y], [($start_x + $end_x) / 2, (($start_y + $end_y) / 2) + $curve_lane], [$end_x, $end_y]];
 
         $glow = new CTag('path', true);
         $glow->setAttribute('d', $path_d);
@@ -503,8 +544,13 @@ for ($i = 1; $i <= $link_count; $i++) {
         $line->setAttribute('fill', 'none');
         $line->setAttribute('stroke', $style['color']);
         $line->setAttribute('stroke-width', (string) $style['width']);
-        $line->setAttribute('class', 'mf-svg-line');
 
+        if ($route_style === WidgetForm::LINK_STYLE_JUMPING) {
+            $line_class = 'mf-svg-line mf-svg-line-jumping';
+            $ball_class = 'mf-svg-ball mf-svg-ball-jumping';
+        }
+
+        $line->setAttribute('class', $line_class);
         $svg->addItem($glow);
         $svg->addItem($line);
     }
@@ -526,6 +572,36 @@ for ($i = 1; $i <= $link_count; $i++) {
                 [$end_x, $mid_y],
                 [$end_x, $end_y]
             ];
+        }
+
+        if ($route_style === WidgetForm::LINK_STYLE_ZIGZAG) {
+            $zigzag_points = [];
+            $zigzag_points[] = $label_points[0];
+            for ($p = 1; $p < count($label_points); $p++) {
+                $from_point = $label_points[$p - 1];
+                $to_point = $label_points[$p];
+                $mid_x = ($from_point[0] + $to_point[0]) / 2;
+                $mid_y = ($from_point[1] + $to_point[1]) / 2;
+
+                if (abs($from_point[0] - $to_point[0]) >= abs($from_point[1] - $to_point[1])) {
+                    $zigzag_points[] = [$mid_x, $mid_y + (($p % 2 === 0) ? -12 : 12)];
+                }
+                else {
+                    $zigzag_points[] = [$mid_x + (($p % 2 === 0) ? -12 : 12), $mid_y];
+                }
+
+                $zigzag_points[] = $to_point;
+            }
+            $label_points = $zigzag_points;
+            $line_class = 'mf-svg-line mf-svg-line-zigzag';
+        }
+        elseif ($route_style === WidgetForm::LINK_STYLE_DOTS) {
+            $line_class = 'mf-svg-line mf-svg-line-dots';
+            $ball_class = 'mf-svg-ball mf-svg-ball-dots';
+        }
+        elseif ($route_style === WidgetForm::LINK_STYLE_EXPLOSIVE) {
+            $line_class = 'mf-svg-line mf-svg-line-explosive';
+            $ball_class = 'mf-svg-ball mf-svg-ball-explosive';
         }
 
         $polyline_points = [];
@@ -551,7 +627,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         $line->setAttribute('fill', 'none');
         $line->setAttribute('stroke', $style['color']);
         $line->setAttribute('stroke-width', (string) $style['width']);
-        $line->setAttribute('class', 'mf-svg-line');
+        $line->setAttribute('class', $line_class);
 
         $svg->addItem($glow);
         $svg->addItem($line);
@@ -561,7 +637,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         $ball = new CTag('circle', true);
         $ball->setAttribute('r', (string) (5 + $b));
         $ball->setAttribute('fill', $style['color']);
-        $ball->setAttribute('class', 'mf-svg-ball');
+        $ball->setAttribute('class', $ball_class);
 
         $animate = new CTag('animateMotion', true);
         $animate->setAttribute('dur', (string) ($style['dur'] + ($b * 0.22)).'s');
@@ -591,28 +667,27 @@ for ($i = 1; $i <= $link_count; $i++) {
         $applyDrilldown($label_box, $link_url);
 
         if ($label !== '') {
-            $label_box->addItem((new CDiv($label))->addClass('mf-link-title'));
+            $label_box->addItem((new CDiv($shortText($label, 16)))->addClass('mf-link-title'));
         }
 
-        $mini = (new CDiv())->addClass('mf-link-items');
+        $flow = (new CDiv())->addClass('mf-link-flow');
+        $flow->addItem((new CDiv('IN '.($in_value !== '' ? $in_value : '-')))->addClass('mf-link-flow-chip'));
+        $flow->addItem((new CDiv('OUT '.($out_value !== '' ? $out_value : '-')))->addClass('mf-link-flow-chip'));
+        $label_box->addItem($flow);
 
-        if ($in_value !== '') $mini->addItem((new CDiv('IN '.$in_value))->addClass('mf-link-item-line'));
-        if ($out_value !== '') $mini->addItem((new CDiv('OUT '.$out_value))->addClass('mf-link-item-line'));
-        if ($loss_value !== '') $mini->addItem((new CDiv('LOSS '.$loss_value))->addClass('mf-link-item-line'));
-        if ($latency_value !== '') $mini->addItem((new CDiv('LAT '.$latency_value))->addClass('mf-link-item-line'));
-        if ($errors_value !== '') $mini->addItem((new CDiv('ERR '.$errors_value))->addClass('mf-link-item-line'));
-
-        if ($in_value === '' && $out_value === '' && $loss_value === '' && $latency_value === '' && $errors_value === '') {
-            $mini->addItem((new CDiv('No values'))->addClass('mf-link-item-line'));
+        $bottom_metrics = (new CDiv())->addClass('mf-link-bottom');
+        if ($loss_value !== '') $bottom_metrics->addItem((new CDiv('LOSS '.$loss_value))->addClass('mf-link-bottom-chip'));
+        if ($latency_value !== '') $bottom_metrics->addItem((new CDiv('LAT '.$latency_value))->addClass('mf-link-bottom-chip'));
+        if ($errors_value !== '') $bottom_metrics->addItem((new CDiv('ERR '.$errors_value))->addClass('mf-link-bottom-chip'));
+        if ($loss_value !== '' || $latency_value !== '' || $errors_value !== '') {
+            $label_box->addItem($bottom_metrics);
         }
-
-        $label_box->addItem($mini);
 
         $label_box->setAttribute(
             'style',
-            'left: calc('.round($mx / 10, 2).'%' .
-            ' - 82px); top: calc('.round($my / 7, 2).'%' .
-            ' - 20px); border-color: '.$style['color'].'; box-shadow: 0 0 12px '.$style['color'].'22, inset 0 0 10px '.$style['color'].'14;'
+            '--mf-link-color: '.$style['color'].'; left: calc('.round($mx / 10, 2).'%' .
+            ' - 74px); top: calc('.round($my / 7, 2).'%' .
+            ' - 24px);'
         );
 
         $link_labels_layer->addItem($label_box);
@@ -620,6 +695,11 @@ for ($i = 1; $i <= $link_count; $i++) {
 }
 
 $canvas = (new CDiv())->addClass('mf-canvas');
+
+$alert_summary = (new CDiv())->addClass('mf-alert-summary');
+$alert_summary->addItem((new CDiv('Critical alerts'))->addClass('mf-alert-summary-title'));
+$alert_summary->addItem((new CDiv('Disaster '.$summary_disaster))->addClass('mf-alert-chip mf-alert-chip-disaster'));
+$alert_summary->addItem((new CDiv('High '.$summary_high))->addClass('mf-alert-chip mf-alert-chip-high'));
 
 $matrix_bg = (new CDiv())->addClass('mf-matrix-bg');
 $matrix_repeat = ($matrix_speed === WidgetForm::MATRIX_SPEED_VERY_FAST) ? 5 : 3;
@@ -634,13 +714,14 @@ for ($i = 0; $i < count($matrix_values); $i++) {
 $canvas
     ->addItem($matrix_bg)
     ->addItem($svg)
+    ->addItem($alert_summary)
     ->addItem($link_labels_layer);
 
 for ($i = 1; $i <= $node_count; $i++) {
     $type_meta = $getNodeTypeMeta($nodes[$i]['type']);
 
     $node = (new CDiv())
-        ->addClass('mf-node'.($nodes[$i]['has_error'] ? ' mf-node-error' : ''))
+        ->addClass('mf-node mf-node-theme-'.$nodes[$i]['theme'].($nodes[$i]['has_error'] ? ' mf-node-error' : ''))
         ->setAttribute('style', 'left: '.$nodes[$i]['x'].'%; top: '.$nodes[$i]['y'].'%;');
 
     $node_url = $getDrilldownUrl($nodes[$i]['hostid']);
@@ -662,10 +743,45 @@ for ($i = 1; $i <= $node_count; $i++) {
         $node->addItem((new CDiv($nodes[$i]['problem_count'].' problem'.($nodes[$i]['problem_count'] === 1 ? '' : 's')))->addClass('mf-node-problems'));
     }
 
-    $metrics = (new CDiv())->addClass('mf-node-metrics');
-    if ($nodes[$i]['cpu'] !== '') $metrics->addItem((new CDiv('CPU '.$nodes[$i]['cpu']))->addClass('mf-node-metric-chip'));
-    if ($nodes[$i]['mem'] !== '') $metrics->addItem((new CDiv('MEM '.$nodes[$i]['mem']))->addClass('mf-node-metric-chip'));
-    if ($nodes[$i]['cpu'] !== '' || $nodes[$i]['mem'] !== '') $node->addItem($metrics);
+    if (in_array($nodes[$i]['theme'], [WidgetForm::NODE_THEME_STATUS_PANEL, WidgetForm::NODE_THEME_EXTRA_PANEL], true)) {
+        $panel = (new CDiv())->addClass('mf-node-panel-data');
+
+        $cpu_pct = $parsePercent($nodes[$i]['cpu']);
+        $mem_pct = $parsePercent($nodes[$i]['mem']);
+        $disk_pct = $parsePercent($nodes[$i]['disk']);
+
+        $rows = [
+            ['label' => 'CPU', 'value' => $nodes[$i]['cpu'], 'pct' => $cpu_pct],
+            ['label' => 'Memory', 'value' => $nodes[$i]['mem'], 'pct' => $mem_pct],
+            ['label' => 'Disk', 'value' => $nodes[$i]['disk'], 'pct' => $disk_pct]
+        ];
+
+        foreach ($rows as $row) {
+            if ($row['value'] === '') {
+                continue;
+            }
+
+            $line = (new CDiv())->addClass('mf-node-panel-line');
+            $line->addItem((new CTag('span', true, $row['label'].':'))->addClass('mf-node-panel-label'));
+            $bar = (new CDiv())->addClass('mf-node-panel-bar');
+            $fill = (new CDiv())->addClass('mf-node-panel-fill')->setAttribute('style', 'width: '.$row['pct'].'%;');
+            $bar->addItem($fill);
+            $line->addItem($bar);
+            $line->addItem((new CTag('span', true, $row['value']))->addClass('mf-node-panel-value'));
+            $panel->addItem($line);
+        }
+
+        $status_text = ($nodes[$i]['problem_count'] > 0 || $nodes[$i]['has_error']) ? '🔴 Issues' : '🟢 Online';
+        $panel->addItem((new CDiv('Status: '.$status_text))->addClass('mf-node-panel-status'));
+        $node->addItem($panel);
+    }
+    else {
+        $metrics = (new CDiv())->addClass('mf-node-metrics');
+        if ($nodes[$i]['cpu'] !== '') $metrics->addItem((new CDiv('CPU '.$nodes[$i]['cpu']))->addClass('mf-node-metric-chip'));
+        if ($nodes[$i]['mem'] !== '') $metrics->addItem((new CDiv('MEM '.$nodes[$i]['mem']))->addClass('mf-node-metric-chip'));
+        if ($nodes[$i]['disk'] !== '') $metrics->addItem((new CDiv('DISK '.$nodes[$i]['disk']))->addClass('mf-node-metric-chip'));
+        if ($nodes[$i]['cpu'] !== '' || $nodes[$i]['mem'] !== '' || $nodes[$i]['disk'] !== '') $node->addItem($metrics);
+    }
 
     $canvas->addItem($node);
 }

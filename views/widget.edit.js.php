@@ -38,6 +38,34 @@ window.matrix_firewall_form = new class {
             }
         };
 
+
+        const panelCache = {};
+
+        const getPanelByKey = (cacheKey, fieldName) => {
+            if (panelCache[cacheKey]) {
+                return panelCache[cacheKey];
+            }
+
+            const el = findField(fieldName);
+            if (!el) {
+                return null;
+            }
+
+            const panel = el.closest('fieldset, .form-fieldset, .dashboard-widget-fieldset, .widget-fieldset, .list-accordion-item, .collapsible');
+            if (panel) {
+                panelCache[cacheKey] = panel;
+            }
+
+            return panel;
+        };
+
+        const showPanel = (cacheKey, fieldName, visible) => {
+            const panel = getPanelByKey(cacheKey, fieldName);
+            if (panel) {
+                panel.style.display = visible ? '' : 'none';
+            }
+        };
+
         const getIntValue = (name, fallback = 0) => {
             const el = findField(name);
             if (!el) return fallback;
@@ -57,17 +85,21 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxNodes; i++) {
                 const visible = i <= nodeCount;
+                showPanel('node-' + i, 'node' + i + '_label', visible);
                 showField('node' + i + '_label', visible);
                 showField('node' + i + '_type', visible);
+                showField('node' + i + '_theme', visible);
                 showField('node' + i + '_host', visible);
                 showField('node' + i + '_x', visible && layoutMode === 1);
                 showField('node' + i + '_y', visible && layoutMode === 1);
                 showField('node' + i + '_cpu_key', visible);
                 showField('node' + i + '_mem_key', visible);
+                showField('node' + i + '_disk_key', visible);
             }
 
             for (let i = 1; i <= maxLinks; i++) {
                 const visible = i <= linkCount;
+                showPanel('link-' + i, 'link' + i + '_label', visible);
                 showField('link' + i + '_label', visible);
                 showField('link' + i + '_from', visible);
                 showField('link' + i + '_to', visible);
@@ -86,6 +118,7 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxExtras; i++) {
                 const visible = i <= extraCount;
+                showPanel('extra-' + i, 'extra' + i + '_label', visible);
                 showField('extra' + i + '_label', visible);
                 showField('extra' + i + '_host', visible);
                 showField('extra' + i + '_key', visible);
@@ -93,6 +126,7 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxStatus; i++) {
                 const visible = i <= statusCount;
+                showPanel('status-' + i, 'status' + i + '_label', visible);
                 showField('status' + i + '_label', visible);
                 showField('status' + i + '_host', visible);
                 showField('status' + i + '_key', visible);
@@ -104,6 +138,7 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxMatrix; i++) {
                 const visible = i <= matrixCount;
+                showPanel('matrix-' + i, 'matrix' + i + '_label', visible);
                 showField('matrix' + i + '_label', visible);
                 showField('matrix' + i + '_host', visible);
                 showField('matrix' + i + '_key', visible);
@@ -113,6 +148,7 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxSparks; i++) {
                 const visible = i <= sparkCount;
+                showPanel('spark-' + i, 'spark' + i + '_label', visible);
                 showField('spark' + i + '_label', visible);
                 showField('spark' + i + '_host', visible);
                 showField('spark' + i + '_key', visible);

@@ -96,6 +96,11 @@ class WidgetView extends CControllerDashboardWidgetView {
             return $build_result($val);
         }
 
+        if (stripos($key, 'disk') !== false) {
+            $val = 15 + ($seed % 80);
+            return $build_result($val);
+        }
+
         if (stripos($key, 'lat') !== false) {
             $val = 2 + ($seed % 120);
             return $build_result($val);
@@ -230,6 +235,45 @@ class WidgetView extends CControllerDashboardWidgetView {
         }
     }
 
+    private function getHighDisasterProblems(array $hostids): array {
+        $result = [
+            'high' => 0,
+            'disaster' => 0
+        ];
+
+        $hostids = array_values(array_unique(array_filter($hostids, static function ($id) {
+            return $id !== '' && $id !== '0';
+        })));
+
+        if (!$hostids) {
+            return $result;
+        }
+
+        try {
+            $problems = \API::Problem()->get([
+                'output' => ['severity'],
+                'hostids' => array_map('intval', $hostids),
+                'suppressed' => false,
+                'recent' => true
+            ]);
+
+            foreach ($problems as $problem) {
+                $severity = (int) ($problem['severity'] ?? -1);
+
+                if ($severity === 5) {
+                    $result['disaster']++;
+                }
+                elseif ($severity === 4) {
+                    $result['high']++;
+                }
+            }
+        }
+        catch (\Throwable $e) {
+        }
+
+        return $result;
+    }
+
     private function parseSparkJson(string $json, int $max = 12): array {
         $result = [
             'count' => 0,
@@ -302,6 +346,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['node'.$i.'_label'] = $this->getField($fields, $inputs, 'node'.$i.'_label', '');
             $data['node'.$i.'_type'] = $this->getField($fields, $inputs, 'node'.$i.'_type', '0');
+            $data['node'.$i.'_theme'] = $this->getField($fields, $inputs, 'node'.$i.'_theme', (string) WidgetForm::NODE_THEME_BOX);
             $data['node'.$i.'_hostid'] = $node_hostid;
             $data['node'.$i.'_host'] = $this->hostIdToName($node_hostid);
             $data['node'.$i.'_x'] = $this->getField($fields, $inputs, 'node'.$i.'_x', '10');
@@ -309,18 +354,22 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['node'.$i.'_cpu_key'] = $this->getField($fields, $inputs, 'node'.$i.'_cpu_key', '');
             $data['node'.$i.'_mem_key'] = $this->getField($fields, $inputs, 'node'.$i.'_mem_key', '');
+            $data['node'.$i.'_disk_key'] = $this->getField($fields, $inputs, 'node'.$i.'_disk_key', '');
 
             $cpu = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_cpu_key'], $allow_random);
             $mem = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_mem_key'], $allow_random);
+            $disk = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_disk_key'], $allow_random);
 
             $data['node'.$i.'_cpu_value'] = $this->formatGeneric($cpu['text']);
             $data['node'.$i.'_mem_value'] = $this->formatGeneric($mem['text']);
+            $data['node'.$i.'_disk_value'] = $this->formatGeneric($disk['text']);
             $data['node'.$i.'_cpu_itemid'] = $cpu['itemid'];
             $data['node'.$i.'_mem_itemid'] = $mem['itemid'];
+            $data['node'.$i.'_disk_itemid'] = $disk['itemid'];
             $problem_count = $this->getHostProblemCount($node_hostid);
 
             $data['node'.$i.'_problem_count'] = (string) $problem_count;
-            $data['node'.$i.'_has_error'] = ($cpu['has_error'] || $mem['has_error'] || $problem_count > 0) ? '1' : '0';
+            $data['node'.$i.'_has_error'] = ($cpu['has_error'] || $mem['has_error'] || $disk['has_error'] || $problem_count > 0) ? '1' : '0';
         }
 
         for ($i = 1; $i <= WidgetForm::MAX_LINKS; $i++) {
@@ -466,6 +515,38 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['spark'.$i.'_item2_itemid'] = $item2['itemid'];
             $data['spark'.$i.'_itemid'] = $spark_value['itemid'];
         }
+
+        $summary_hostids = [];
+
+        for ($i = 1; $i <= WidgetForm::MAX_NODES; $i++) {
+            $summary_hostids[] = $data['node'.$i.'_hostid'] ?? '0';
+        }
+
+        for ($i = 1; $i <= WidgetForm::MAX_LINKS; $i++) {
+            $summary_hostids[] = $data['link'.$i.'_in_hostid'] ?? '0';
+            $summary_hostids[] = $data['link'.$i.'_out_hostid'] ?? '0';
+            $summary_hostids[] = $data['link'.$i.'_health_hostid'] ?? '0';
+        }
+
+        for ($i = 1; $i <= WidgetForm::MAX_EXTRAS; $i++) {
+            $summary_hostids[] = $data['extra'.$i.'_hostid'] ?? '0';
+        }
+
+        for ($i = 1; $i <= WidgetForm::MAX_STATUS; $i++) {
+            $summary_hostids[] = $data['status'.$i.'_hostid'] ?? '0';
+        }
+
+        for ($i = 1; $i <= WidgetForm::MAX_MATRIX_VALUES; $i++) {
+            $summary_hostids[] = $data['matrix'.$i.'_hostid'] ?? '0';
+        }
+
+        for ($i = 1; $i <= WidgetForm::MAX_SPARKS; $i++) {
+            $summary_hostids[] = $data['spark'.$i.'_hostid'] ?? '0';
+        }
+
+        $summary = $this->getHighDisasterProblems($summary_hostids);
+        $data['summary_high'] = (string) $summary['high'];
+        $data['summary_disaster'] = (string) $summary['disaster'];
 
         $this->setResponse(new CControllerResponseData($data));
     }

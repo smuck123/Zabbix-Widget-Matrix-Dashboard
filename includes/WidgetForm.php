@@ -29,6 +29,11 @@ class WidgetForm extends CWidgetForm {
     public const LINK_STYLE_ELBOW = 0;
     public const LINK_STYLE_STRAIGHT = 1;
     public const LINK_STYLE_CURVED = 2;
+    public const LINK_STYLE_EXPLOSIVE = 3;
+    public const LINK_STYLE_DOTS = 4;
+    public const LINK_STYLE_JUMPING = 5;
+    public const LINK_STYLE_FILE_TRANSFER = 6;
+    public const LINK_STYLE_ZIGZAG = 7;
 
     public const LINK_DRILLDOWN_AUTO = 0;
     public const LINK_DRILLDOWN_GRAPH = 1;
@@ -44,6 +49,16 @@ class WidgetForm extends CWidgetForm {
     public const NODE_TYPE_INTERNET = 6;
     public const NODE_TYPE_DATACENTER = 7;
     public const NODE_TYPE_DATABASE = 8;
+
+    public const NODE_THEME_BOX = 0;
+    public const NODE_THEME_GLASS = 1;
+    public const NODE_THEME_TERMINAL = 2;
+    public const NODE_THEME_PILL = 3;
+    public const NODE_THEME_NEON = 4;
+    public const NODE_THEME_PANEL = 5;
+    public const NODE_THEME_OUTLINE = 6;
+    public const NODE_THEME_STATUS_PANEL = 7;
+    public const NODE_THEME_EXTRA_PANEL = 8;
 
     public const MATRIX_SPEED_SLOW = 0;
     public const MATRIX_SPEED_NORMAL = 1;
@@ -121,7 +136,12 @@ class WidgetForm extends CWidgetForm {
         return [
             self::LINK_STYLE_ELBOW => 'Elbow',
             self::LINK_STYLE_STRAIGHT => 'Straight',
-            self::LINK_STYLE_CURVED => 'Curved'
+            self::LINK_STYLE_CURVED => 'Curved',
+            self::LINK_STYLE_EXPLOSIVE => 'Explosive',
+            self::LINK_STYLE_DOTS => 'Dots',
+            self::LINK_STYLE_JUMPING => 'Jumping',
+            self::LINK_STYLE_FILE_TRANSFER => 'File transfer',
+            self::LINK_STYLE_ZIGZAG => 'Zigzag'
         ];
     }
 
@@ -155,6 +175,20 @@ class WidgetForm extends CWidgetForm {
         ];
     }
 
+    private function getNodeThemeOptions(): array {
+        return [
+            self::NODE_THEME_BOX => 'Box',
+            self::NODE_THEME_GLASS => 'Glass',
+            self::NODE_THEME_TERMINAL => 'Terminal',
+            self::NODE_THEME_PILL => 'Pill',
+            self::NODE_THEME_NEON => 'Neon',
+            self::NODE_THEME_PANEL => 'Panel',
+            self::NODE_THEME_OUTLINE => 'Outline',
+            self::NODE_THEME_STATUS_PANEL => 'Status panel',
+            self::NODE_THEME_EXTRA_PANEL => 'Extra panel'
+        ];
+    }
+
     private function getMatrixSpeedOptions(): array {
         return [
             self::MATRIX_SPEED_SLOW => 'Slow',
@@ -180,6 +214,7 @@ class WidgetForm extends CWidgetForm {
         $link_drilldowns = $this->getLinkDrilldownOptions();
         $yesno = $this->getYesNoOptions();
         $node_types = $this->getNodeTypeOptions();
+        $node_themes = $this->getNodeThemeOptions();
         $matrix_speeds = $this->getMatrixSpeedOptions();
         $spark_grouping = $this->getSparkGroupingOptions();
 
@@ -198,11 +233,13 @@ class WidgetForm extends CWidgetForm {
             $this
                 ->addField((new CWidgetFieldTextBox('node'.$i.'_label', 'Node '.$i.' label'))->setDefault(''))
                 ->addField((new CWidgetFieldSelect('node'.$i.'_type', 'Node '.$i.' type', $node_types))->setDefault(self::NODE_TYPE_GENERIC))
+                ->addField((new CWidgetFieldSelect('node'.$i.'_theme', 'Node '.$i.' theme', $node_themes))->setDefault(self::NODE_THEME_BOX))
                 ->addField((new CWidgetFieldSelect('node'.$i.'_host', 'Node '.$i.' host', $host_options))->setDefault(0))
                 ->addField((new CWidgetFieldIntegerBox('node'.$i.'_x', 'Node '.$i.' X %'))->setDefault(10))
                 ->addField((new CWidgetFieldIntegerBox('node'.$i.'_y', 'Node '.$i.' Y %'))->setDefault(10))
                 ->addField((new CWidgetFieldTextBox('node'.$i.'_cpu_key', 'Node '.$i.' CPU item key'))->setDefault(''))
-                ->addField((new CWidgetFieldTextBox('node'.$i.'_mem_key', 'Node '.$i.' Memory item key'))->setDefault(''));
+                ->addField((new CWidgetFieldTextBox('node'.$i.'_mem_key', 'Node '.$i.' Memory item key'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('node'.$i.'_disk_key', 'Node '.$i.' Disk item key'))->setDefault(''));
         }
 
         for ($i = 1; $i <= self::MAX_LINKS; $i++) {
