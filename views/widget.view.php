@@ -704,14 +704,14 @@ for ($i = 1; $i <= $spark_count; $i++) {
         }
 
         $slot_positions = [
-            ['box_left' => 82,   'box_top' => -22,  'line_left' => 18,  'line_top' => 1,   'line_width' => 58, 'line_height' => 2,  'transform' => 'none'],
-            ['box_left' => 58,   'box_top' => -118, 'line_left' => 9,   'line_top' => -30, 'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'left center'],
-            ['box_left' => 58,   'box_top' => 62,   'line_left' => 9,   'line_top' => 31,  'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'left center'],
-            ['box_left' => -188, 'box_top' => -22,  'line_left' => -72, 'line_top' => 1,   'line_width' => 58, 'line_height' => 2,  'transform' => 'none'],
-            ['box_left' => -182, 'box_top' => -118, 'line_left' => -54, 'line_top' => -30, 'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'right center'],
-            ['box_left' => -182, 'box_top' => 62,   'line_left' => -54, 'line_top' => 31,  'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'right center'],
-            ['box_left' => -46,  'box_top' => -146, 'line_left' => -1,  'line_top' => -82, 'line_width' => 2,  'line_height' => 60, 'transform' => 'none'],
-            ['box_left' => -46,  'box_top' => 98,   'line_left' => -1,  'line_top' => 20,  'line_width' => 2,  'line_height' => 60, 'transform' => 'none']
+            ['box_left' => 120,  'box_top' => -26,  'line_left' => 18,  'line_top' => 1,   'line_width' => 92, 'line_height' => 2,  'transform' => 'none'],
+            ['box_left' => 96,   'box_top' => -154, 'line_left' => 10,  'line_top' => -32, 'line_width' => 100, 'line_height' => 2, 'transform' => 'rotate(-35deg)', 'origin' => 'left center'],
+            ['box_left' => 96,   'box_top' => 92,   'line_left' => 10,  'line_top' => 33,  'line_width' => 100, 'line_height' => 2, 'transform' => 'rotate(35deg)', 'origin' => 'left center'],
+            ['box_left' => -230, 'box_top' => -26,  'line_left' => -106, 'line_top' => 1,  'line_width' => 92, 'line_height' => 2,  'transform' => 'none'],
+            ['box_left' => -206, 'box_top' => -154, 'line_left' => -86, 'line_top' => -32, 'line_width' => 100, 'line_height' => 2, 'transform' => 'rotate(35deg)', 'origin' => 'right center'],
+            ['box_left' => -206, 'box_top' => 92,   'line_left' => -86, 'line_top' => 33,  'line_width' => 100, 'line_height' => 2, 'transform' => 'rotate(-35deg)', 'origin' => 'right center'],
+            ['box_left' => -58,  'box_top' => -182, 'line_left' => -1,  'line_top' => -108, 'line_width' => 2, 'line_height' => 84, 'transform' => 'none'],
+            ['box_left' => -58,  'box_top' => 130,  'line_left' => -1,  'line_top' => 24,  'line_width' => 2,  'line_height' => 84, 'transform' => 'none']
         ];
 
         $slot_index = 0;
