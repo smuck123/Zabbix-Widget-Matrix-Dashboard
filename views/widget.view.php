@@ -47,7 +47,23 @@ $normalizeId = static function($value): string {
     return ($id !== '' && $id !== '0') ? $id : '';
 };
 
-$getDrilldownUrl = static function(string $hostid, string $itemid = ''): string {
+$getDrilldownUrl = static function(string $hostid, string $itemid = '', int $mode = WidgetForm::LINK_DRILLDOWN_AUTO): string {
+    if ($mode === WidgetForm::LINK_DRILLDOWN_PROBLEMS) {
+        if ($hostid !== '' && $hostid !== '0') {
+            return 'zabbix.php?action=problem.view&filter_set=1&hostids[]='.$hostid;
+        }
+
+        return '';
+    }
+
+    if ($mode === WidgetForm::LINK_DRILLDOWN_LATEST) {
+        if ($hostid !== '' && $hostid !== '0') {
+            return 'zabbix.php?action=latest.view&hostids[]='.$hostid;
+        }
+
+        return '';
+    }
+
     if ($itemid !== '' && $itemid !== '0') {
         return 'history.php?action=showgraph&itemids[]='.$itemid;
     }
@@ -113,29 +129,29 @@ $getMatrixDurations = static function(int $speed): array {
 $getTrafficStyle = static function(float $traffic): array {
     $color = '#6bff9e';
     $width = 2.5;
-    $glow_width = 8;
-    $dur = 3.0;
+    $glow_width = 9;
+    $dur = 2.4;
     $balls = 1;
 
     if ($traffic >= 100000000) {
         $width = 3.0;
-        $glow_width = 10;
-        $dur = 2.3;
+        $glow_width = 12;
+        $dur = 1.8;
     }
 
     if ($traffic >= 500000000) {
         $color = '#ffd84d';
         $width = 4.0;
-        $glow_width = 12;
-        $dur = 1.7;
+        $glow_width = 15;
+        $dur = 1.25;
         $balls = 2;
     }
 
     if ($traffic >= 1000000000) {
         $color = '#ff5f5f';
         $width = 5.5;
-        $glow_width = 15;
-        $dur = 1.1;
+        $glow_width = 18;
+        $dur = 0.8;
         $balls = 3;
     }
 
@@ -242,6 +258,7 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
             'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
             'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
+            'problem_count' => $clampInt($data['node'.$i.'_problem_count'] ?? 0, 0, 9999, 0),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => $clampInt($data['node'.$i.'_x'] ?? 10, 2, 90, 10),
             'y' => $clampInt($data['node'.$i.'_y'] ?? 10, 6, 78, 10)
@@ -293,6 +310,7 @@ else {
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
             'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
             'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
+            'problem_count' => $clampInt($data['node'.$i.'_problem_count'] ?? 0, 0, 9999, 0),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => min(86, max(5, $x)),
             'y' => min(74, max(8, $y))
@@ -402,7 +420,8 @@ for ($i = 1; $i <= $link_count; $i++) {
 
     $link_itemid = $in_itemid !== '' ? $in_itemid : ($out_itemid !== '' ? $out_itemid : ($loss_itemid !== '' ? $loss_itemid : ($latency_itemid !== '' ? $latency_itemid : $errors_itemid)));
     $link_hostid = $health_hostid !== '' ? $health_hostid : ($in_hostid !== '' ? $in_hostid : $out_hostid);
-    $link_url = $getDrilldownUrl($link_hostid, $link_itemid);
+    $link_drilldown_mode = $clampInt($data['link'.$i.'_drilldown'] ?? WidgetForm::LINK_DRILLDOWN_AUTO, WidgetForm::LINK_DRILLDOWN_AUTO, WidgetForm::LINK_DRILLDOWN_PROBLEMS, WidgetForm::LINK_DRILLDOWN_AUTO);
+    $link_url = $getDrilldownUrl($link_hostid, $link_itemid, $link_drilldown_mode);
 
     $node_box_w = 72;
     $node_box_h = 46;
@@ -637,6 +656,10 @@ for ($i = 1; $i <= $node_count; $i++) {
 
     if ($nodes[$i]['host'] !== '') {
         $node->addItem((new CDiv($shortText($nodes[$i]['host'], 30)))->addClass('mf-node-host'));
+    }
+
+    if ($nodes[$i]['problem_count'] > 0) {
+        $node->addItem((new CDiv($nodes[$i]['problem_count'].' problem'.($nodes[$i]['problem_count'] === 1 ? '' : 's')))->addClass('mf-node-problems'));
     }
 
     $metrics = (new CDiv())->addClass('mf-node-metrics');
