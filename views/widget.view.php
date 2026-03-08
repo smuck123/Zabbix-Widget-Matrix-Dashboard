@@ -378,6 +378,8 @@ if (!$matrix_values) {
 }
 
 $durations = $getMatrixDurations($matrix_speed);
+$summary_high = $clampInt($data['summary_high'] ?? 0, 0, 99999, 0);
+$summary_disaster = $clampInt($data['summary_disaster'] ?? 0, 0, 99999, 0);
 
 $svg = new CTag('svg', true);
 $svg->setAttribute('class', 'mf-svg');
@@ -591,28 +593,36 @@ for ($i = 1; $i <= $link_count; $i++) {
         $applyDrilldown($label_box, $link_url);
 
         if ($label !== '') {
-            $label_box->addItem((new CDiv($label))->addClass('mf-link-title'));
+            $label_box->addItem((new CDiv($shortText($label, 12)))->addClass('mf-link-title'));
         }
 
         $mini = (new CDiv())->addClass('mf-link-items');
 
         if ($in_value !== '') $mini->addItem((new CDiv('IN '.$in_value))->addClass('mf-link-item-line'));
         if ($out_value !== '') $mini->addItem((new CDiv('OUT '.$out_value))->addClass('mf-link-item-line'));
-        if ($loss_value !== '') $mini->addItem((new CDiv('LOSS '.$loss_value))->addClass('mf-link-item-line'));
-        if ($latency_value !== '') $mini->addItem((new CDiv('LAT '.$latency_value))->addClass('mf-link-item-line'));
-        if ($errors_value !== '') $mini->addItem((new CDiv('ERR '.$errors_value))->addClass('mf-link-item-line'));
 
-        if ($in_value === '' && $out_value === '' && $loss_value === '' && $latency_value === '' && $errors_value === '') {
-            $mini->addItem((new CDiv('No values'))->addClass('mf-link-item-line'));
+        if ($in_value === '' && $out_value === '') {
+            $mini->addItem((new CDiv('No traffic'))->addClass('mf-link-item-line'));
         }
 
         $label_box->addItem($mini);
 
+        $problems_text = $errors_value !== '' ? 'Problems '.$errors_value : ($has_error ? 'Problems !' : 'Problems 0');
+        $label_box->addItem((new CDiv($problems_text))->addClass('mf-link-problem'));
+
+        $bottom_metrics = (new CDiv())->addClass('mf-link-bottom');
+        if ($loss_value !== '') $bottom_metrics->addItem((new CDiv('LOSS '.$loss_value))->addClass('mf-link-bottom-chip'));
+        if ($latency_value !== '') $bottom_metrics->addItem((new CDiv('LAT '.$latency_value))->addClass('mf-link-bottom-chip'));
+        if ($errors_value !== '') $bottom_metrics->addItem((new CDiv('ERR '.$errors_value))->addClass('mf-link-bottom-chip'));
+        if ($loss_value !== '' || $latency_value !== '' || $errors_value !== '') {
+            $label_box->addItem($bottom_metrics);
+        }
+
         $label_box->setAttribute(
             'style',
-            'left: calc('.round($mx / 10, 2).'%' .
-            ' - 82px); top: calc('.round($my / 7, 2).'%' .
-            ' - 20px); border-color: '.$style['color'].'; box-shadow: 0 0 12px '.$style['color'].'22, inset 0 0 10px '.$style['color'].'14;'
+            '--mf-link-color: '.$style['color'].'; left: calc('.round($mx / 10, 2).'%' .
+            ' - 58px); top: calc('.round($my / 7, 2).'%' .
+            ' - 52px);'
         );
 
         $link_labels_layer->addItem($label_box);
@@ -620,6 +630,11 @@ for ($i = 1; $i <= $link_count; $i++) {
 }
 
 $canvas = (new CDiv())->addClass('mf-canvas');
+
+$alert_summary = (new CDiv())->addClass('mf-alert-summary');
+$alert_summary->addItem((new CDiv('Critical alerts'))->addClass('mf-alert-summary-title'));
+$alert_summary->addItem((new CDiv('Disaster '.$summary_disaster))->addClass('mf-alert-chip mf-alert-chip-disaster'));
+$alert_summary->addItem((new CDiv('High '.$summary_high))->addClass('mf-alert-chip mf-alert-chip-high'));
 
 $matrix_bg = (new CDiv())->addClass('mf-matrix-bg');
 $matrix_repeat = ($matrix_speed === WidgetForm::MATRIX_SPEED_VERY_FAST) ? 5 : 3;
@@ -634,6 +649,7 @@ for ($i = 0; $i < count($matrix_values); $i++) {
 $canvas
     ->addItem($matrix_bg)
     ->addItem($svg)
+    ->addItem($alert_summary)
     ->addItem($link_labels_layer);
 
 for ($i = 1; $i <= $node_count; $i++) {
