@@ -78,34 +78,41 @@ class WidgetView extends CControllerDashboardWidgetView {
 
     private function getRandomValue(string $key): array {
         $seed = abs(crc32($key.date('YmdHi')));
+        $build_result = static function (int $value): array {
+            return [
+                'raw' => (float) $value,
+                'text' => (string) $value,
+                'itemid' => '0'
+            ];
+        };
 
         if (stripos($key, 'cpu') !== false) {
             $val = 5 + ($seed % 70);
-            return ['raw' => (float) $val, 'text' => (string) $val];
+            return $build_result($val);
         }
 
         if (stripos($key, 'mem') !== false || stripos($key, 'memory') !== false) {
             $val = 20 + ($seed % 75);
-            return ['raw' => (float) $val, 'text' => (string) $val];
+            return $build_result($val);
         }
 
         if (stripos($key, 'lat') !== false) {
             $val = 2 + ($seed % 120);
-            return ['raw' => (float) $val, 'text' => (string) $val];
+            return $build_result($val);
         }
 
         if (stripos($key, 'loss') !== false) {
             $val = $seed % 4;
-            return ['raw' => (float) $val, 'text' => (string) $val];
+            return $build_result($val);
         }
 
         if (stripos($key, 'err') !== false) {
             $val = $seed % 20;
-            return ['raw' => (float) $val, 'text' => (string) $val];
+            return $build_result($val);
         }
 
         $bps = 5000000 + (($seed % 1600) * 1000000);
-        return ['raw' => (float) $bps, 'text' => (string) $bps];
+        return $build_result($bps);
     }
 
     private function getRandomMatrixText(string $prefix = ''): string {
