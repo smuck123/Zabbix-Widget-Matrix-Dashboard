@@ -252,7 +252,7 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
-            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_PILL, WidgetForm::NODE_THEME_BOX),
+            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_OUTLINE, WidgetForm::NODE_THEME_BOX),
             'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
@@ -305,7 +305,7 @@ else {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
-            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_PILL, WidgetForm::NODE_THEME_BOX),
+            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_OUTLINE, WidgetForm::NODE_THEME_BOX),
             'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
@@ -412,7 +412,7 @@ for ($i = 1; $i <= $link_count; $i++) {
 
     $style = $getTrafficStyle($traffic);
     $has_error = (($data['link'.$i.'_has_error'] ?? '0') === '1');
-    $route_style = $clampInt($data['link'.$i.'_style'] ?? 0, 0, 2, 0);
+    $route_style = $clampInt($data['link'.$i.'_style'] ?? 0, WidgetForm::LINK_STYLE_ELBOW, WidgetForm::LINK_STYLE_ZIGZAG, WidgetForm::LINK_STYLE_ELBOW);
     $show_label = $clampInt($data['link'.$i.'_show_label'] ?? 1, 0, 1, 1) === 1;
     $in_hostid = $normalizeId($data['link'.$i.'_in_hostid'] ?? '');
     $out_hostid = $normalizeId($data['link'.$i.'_out_hostid'] ?? '');
@@ -463,7 +463,10 @@ for ($i = 1; $i <= $link_count; $i++) {
     $path_d = '';
     $label_points = [];
 
-    if ($route_style === WidgetForm::LINK_STYLE_STRAIGHT) {
+    $line_class = 'mf-svg-line';
+    $ball_class = 'mf-svg-ball';
+
+    if ($route_style === WidgetForm::LINK_STYLE_STRAIGHT || $route_style === WidgetForm::LINK_STYLE_FILE_TRANSFER) {
         $path_d = 'M'.round($start_x, 2).','.round($start_y, 2).' L'.round($end_x, 2).','.round($end_y, 2);
         $label_points = [[$start_x, $start_y], [$end_x, $end_y]];
 
@@ -483,23 +486,30 @@ for ($i = 1; $i <= $link_count; $i++) {
         $line->setAttribute('y2', (string) round($end_y, 2));
         $line->setAttribute('stroke', $style['color']);
         $line->setAttribute('stroke-width', (string) $style['width']);
-        $line->setAttribute('class', 'mf-svg-line');
 
+        if ($route_style === WidgetForm::LINK_STYLE_FILE_TRANSFER) {
+            $line_class = 'mf-svg-line mf-svg-line-file-transfer';
+            $ball_class = 'mf-svg-ball mf-svg-ball-file-transfer';
+            $line->setAttribute('stroke-dasharray', '22 8');
+        }
+
+        $line->setAttribute('class', $line_class);
         $svg->addItem($glow);
         $svg->addItem($line);
     }
-    elseif ($route_style === WidgetForm::LINK_STYLE_CURVED) {
+    elseif ($route_style === WidgetForm::LINK_STYLE_CURVED || $route_style === WidgetForm::LINK_STYLE_JUMPING) {
+        $curve_lane = ($route_style === WidgetForm::LINK_STYLE_JUMPING) ? ($lane * 1.6) : $lane;
         $c1x = $start_x + (($end_x - $start_x) * 0.35);
-        $c1y = $start_y + $lane;
+        $c1y = $start_y + $curve_lane;
         $c2x = $start_x + (($end_x - $start_x) * 0.65);
-        $c2y = $end_y + $lane;
+        $c2y = $end_y + $curve_lane;
 
         $path_d = 'M'.round($start_x, 2).','.round($start_y, 2)
             .' C'.round($c1x, 2).','.round($c1y, 2)
             .' '.round($c2x, 2).','.round($c2y, 2)
             .' '.round($end_x, 2).','.round($end_y, 2);
 
-        $label_points = [[$start_x, $start_y], [($start_x + $end_x) / 2, (($start_y + $end_y) / 2) + $lane], [$end_x, $end_y]];
+        $label_points = [[$start_x, $start_y], [($start_x + $end_x) / 2, (($start_y + $end_y) / 2) + $curve_lane], [$end_x, $end_y]];
 
         $glow = new CTag('path', true);
         $glow->setAttribute('d', $path_d);
@@ -513,8 +523,13 @@ for ($i = 1; $i <= $link_count; $i++) {
         $line->setAttribute('fill', 'none');
         $line->setAttribute('stroke', $style['color']);
         $line->setAttribute('stroke-width', (string) $style['width']);
-        $line->setAttribute('class', 'mf-svg-line');
 
+        if ($route_style === WidgetForm::LINK_STYLE_JUMPING) {
+            $line_class = 'mf-svg-line mf-svg-line-jumping';
+            $ball_class = 'mf-svg-ball mf-svg-ball-jumping';
+        }
+
+        $line->setAttribute('class', $line_class);
         $svg->addItem($glow);
         $svg->addItem($line);
     }
@@ -536,6 +551,36 @@ for ($i = 1; $i <= $link_count; $i++) {
                 [$end_x, $mid_y],
                 [$end_x, $end_y]
             ];
+        }
+
+        if ($route_style === WidgetForm::LINK_STYLE_ZIGZAG) {
+            $zigzag_points = [];
+            $zigzag_points[] = $label_points[0];
+            for ($p = 1; $p < count($label_points); $p++) {
+                $from_point = $label_points[$p - 1];
+                $to_point = $label_points[$p];
+                $mid_x = ($from_point[0] + $to_point[0]) / 2;
+                $mid_y = ($from_point[1] + $to_point[1]) / 2;
+
+                if (abs($from_point[0] - $to_point[0]) >= abs($from_point[1] - $to_point[1])) {
+                    $zigzag_points[] = [$mid_x, $mid_y + (($p % 2 === 0) ? -12 : 12)];
+                }
+                else {
+                    $zigzag_points[] = [$mid_x + (($p % 2 === 0) ? -12 : 12), $mid_y];
+                }
+
+                $zigzag_points[] = $to_point;
+            }
+            $label_points = $zigzag_points;
+            $line_class = 'mf-svg-line mf-svg-line-zigzag';
+        }
+        elseif ($route_style === WidgetForm::LINK_STYLE_DOTS) {
+            $line_class = 'mf-svg-line mf-svg-line-dots';
+            $ball_class = 'mf-svg-ball mf-svg-ball-dots';
+        }
+        elseif ($route_style === WidgetForm::LINK_STYLE_EXPLOSIVE) {
+            $line_class = 'mf-svg-line mf-svg-line-explosive';
+            $ball_class = 'mf-svg-ball mf-svg-ball-explosive';
         }
 
         $polyline_points = [];
@@ -561,7 +606,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         $line->setAttribute('fill', 'none');
         $line->setAttribute('stroke', $style['color']);
         $line->setAttribute('stroke-width', (string) $style['width']);
-        $line->setAttribute('class', 'mf-svg-line');
+        $line->setAttribute('class', $line_class);
 
         $svg->addItem($glow);
         $svg->addItem($line);
@@ -571,7 +616,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         $ball = new CTag('circle', true);
         $ball->setAttribute('r', (string) (5 + $b));
         $ball->setAttribute('fill', $style['color']);
-        $ball->setAttribute('class', 'mf-svg-ball');
+        $ball->setAttribute('class', $ball_class);
 
         $animate = new CTag('animateMotion', true);
         $animate->setAttribute('dur', (string) ($style['dur'] + ($b * 0.22)).'s');
