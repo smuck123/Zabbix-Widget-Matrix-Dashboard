@@ -238,24 +238,6 @@
 }
 
 
-.mf-link-label-drag {
-    position: absolute;
-    right: 6px;
-    top: 4px;
-    font-size: 10px;
-    line-height: 1;
-    color: #a7d9ba;
-    letter-spacing: 1px;
-    cursor: grab;
-    padding: 1px 3px;
-    border-radius: 4px;
-    border: 1px solid rgba(130, 220, 170, 0.25);
-    background: rgba(0, 0, 0, 0.35);
-}
-
-.mf-link-label-drag:active {
-    cursor: grabbing;
-}
 
 .mf-link-label-theme-0 { }
 .mf-link-label-theme-1 { border-style: dotted; background: rgba(2, 8, 6, 0.92); }
