@@ -67,6 +67,7 @@ $applyDrilldown = static function($element, string $url, string $title = 'Open d
     $safe_url = str_replace("'", "\\'", $url);
 
     $element->addClass('mf-drilldown');
+    $element->setAttribute('data-mf-drilldown-url', $url);
     $element->setAttribute('title', $title);
     $element->setAttribute('tabindex', '0');
     $element->setAttribute('role', 'link');
@@ -871,33 +872,6 @@ $legend_text = (($data['demo_mode'] ?? '0') === '1')
     ? 'Demo fallback enabled: missing items use random values.'
     : 'High traffic = thicker line, hotter color, faster balls.';
 
-$drilldown_js = <<<'JS'
-(function() {
-    const openDrilldown = (el) => {
-        const url = el && el.getAttribute('data-mf-drilldown-url');
-        if (!url) {
-            return;
-        }
-
-        window.open(url, '_blank', 'noopener');
-    };
-
-    document.addEventListener('click', function(e) {
-        const trigger = e.target.closest('[data-mf-drilldown-url]');
-        if (!trigger) {
-            return;
-        }
-
-        if (e.target.closest('a, button, input, textarea, select, [role="button"]')) {
-            return;
-        }
-
-        e.preventDefault();
-        openDrilldown(trigger);
-    });
-})();
-JS;
-
 (new CWidgetView($data))
     ->addItem(
         (new CDiv())
@@ -909,5 +883,4 @@ JS;
             ->addItem((new CDiv($legend_text))->addClass('mf-legend'))
             ->addItem($extras)
     )
-    ->addJavaScript($drilldown_js)
     ->show();
