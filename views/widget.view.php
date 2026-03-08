@@ -12,6 +12,7 @@ $max_links = 30;
 $max_extras = 10;
 $max_status = 10;
 $max_matrix_values = 20;
+$max_sparks = 6;
 
 $clampInt = static function($value, int $min, int $max, int $default): int {
     if ($value === '' || !is_numeric($value)) {
@@ -32,71 +33,125 @@ $clampInt = static function($value, int $min, int $max, int $default): int {
 
 $shortText = static function(string $value, int $limit = 28): string {
     $value = trim($value);
-    if ($value === '') return '';
-    if (mb_strlen($value) > $limit) return mb_substr($value, 0, $limit).'...';
+    if ($value === '') {
+        return '';
+    }
+    if (mb_strlen($value) > $limit) {
+        return mb_substr($value, 0, $limit).'...';
+    }
     return $value;
 };
 
-$getNodeIcon = static function(int $type): string {
+$normalizeId = static function($value): string {
+    $id = trim((string) $value);
+    return ($id !== '' && $id !== '0') ? $id : '';
+};
+
+$getDrilldownUrl = static function(string $hostid, string $itemid = '', int $mode = WidgetForm::LINK_DRILLDOWN_AUTO): string {
+    if ($mode === WidgetForm::LINK_DRILLDOWN_PROBLEMS) {
+        if ($hostid !== '' && $hostid !== '0') {
+            return 'zabbix.php?action=problem.view&filter_set=1&hostids[]='.$hostid;
+        }
+
+        return '';
+    }
+
+    if ($mode === WidgetForm::LINK_DRILLDOWN_LATEST) {
+        if ($hostid !== '' && $hostid !== '0') {
+            return 'zabbix.php?action=latest.view&hostids[]='.$hostid;
+        }
+
+        return '';
+    }
+
+    if ($itemid !== '' && $itemid !== '0') {
+        return 'history.php?action=showgraph&itemids[]='.$itemid;
+    }
+
+    if ($hostid !== '' && $hostid !== '0') {
+        return 'zabbix.php?action=latest.view&hostids[]='.$hostid;
+    }
+
+    return '';
+};
+
+$applyDrilldown = static function($element, string $url, string $title = 'Open drill-down'): void {
+    if ($url === '') {
+        return;
+    }
+
+    $safe_url = str_replace("'", "\\'", $url);
+
+    $element->addClass('mf-drilldown');
+    $element->setAttribute('data-mf-drilldown-url', $url);
+    $element->setAttribute('title', $title);
+    $element->setAttribute('tabindex', '0');
+    $element->setAttribute('role', 'link');
+    $element->setAttribute('onclick', "window.open('{$safe_url}', '_blank', 'noopener'); return false;");
+};
+
+$getNodeTypeMeta = static function(int $type): array {
     switch ($type) {
         case WidgetForm::NODE_TYPE_FIREWALL:
-            return '🛡';
+            return ['text' => 'FW', 'class' => 'mf-node-type-firewall'];
         case WidgetForm::NODE_TYPE_CLOUD:
-            return '☁';
+            return ['text' => 'CLD', 'class' => 'mf-node-type-cloud'];
         case WidgetForm::NODE_TYPE_SERVER:
-            return '🖥';
+            return ['text' => 'SRV', 'class' => 'mf-node-type-server'];
         case WidgetForm::NODE_TYPE_OFFICE:
-            return '🏢';
+            return ['text' => 'OFC', 'class' => 'mf-node-type-office'];
         case WidgetForm::NODE_TYPE_EXPRESSROUTE:
-            return '⇄';
+            return ['text' => 'XR', 'class' => 'mf-node-type-expressroute'];
         case WidgetForm::NODE_TYPE_INTERNET:
-            return '🌐';
+            return ['text' => 'NET', 'class' => 'mf-node-type-internet'];
         case WidgetForm::NODE_TYPE_DATACENTER:
-            return '🏬';
+            return ['text' => 'DC', 'class' => 'mf-node-type-datacenter'];
         case WidgetForm::NODE_TYPE_DATABASE:
-            return '🛢';
+            return ['text' => 'DB', 'class' => 'mf-node-type-database'];
         default:
-            return '⬢';
+            return ['text' => 'GEN', 'class' => 'mf-node-type-generic'];
     }
 };
 
 $getMatrixDurations = static function(int $speed): array {
     switch ($speed) {
         case WidgetForm::MATRIX_SPEED_SLOW:
-            return [18, 14, 16, 20, 15, 19, 17, 21];
+            return [18, 14, 16, 20, 15, 19, 17, 21, 16, 22, 18, 20];
         case WidgetForm::MATRIX_SPEED_FAST:
-            return [8, 6, 7, 9, 7, 10, 8, 11];
+            return [8, 6, 7, 9, 7, 10, 8, 11, 6, 9, 7, 8];
+        case WidgetForm::MATRIX_SPEED_VERY_FAST:
+            return [4, 3, 5, 4, 3, 5, 4, 6, 3, 4, 5, 3];
         default:
-            return [12, 8, 10, 14, 9, 13, 11, 15];
+            return [12, 8, 10, 14, 9, 13, 11, 15, 10, 12, 11, 13];
     }
 };
 
 $getTrafficStyle = static function(float $traffic): array {
     $color = '#6bff9e';
     $width = 2.5;
-    $glow_width = 8;
-    $dur = 3.0;
+    $glow_width = 9;
+    $dur = 2.4;
     $balls = 1;
 
     if ($traffic >= 100000000) {
         $width = 3.0;
-        $glow_width = 10;
-        $dur = 2.3;
+        $glow_width = 12;
+        $dur = 1.8;
     }
 
     if ($traffic >= 500000000) {
         $color = '#ffd84d';
         $width = 4.0;
-        $glow_width = 12;
-        $dur = 1.7;
+        $glow_width = 15;
+        $dur = 1.25;
         $balls = 2;
     }
 
     if ($traffic >= 1000000000) {
         $color = '#ff5f5f';
         $width = 5.5;
-        $glow_width = 15;
-        $dur = 1.1;
+        $glow_width = 18;
+        $dur = 0.8;
         $balls = 3;
     }
 
@@ -156,13 +211,39 @@ $getMidPointOnPolyline = static function(array $points): array {
     return [$last[0], $last[1]];
 };
 
+$getSparkPortMeta = static function(string $port): array {
+    $p = (int) $port;
+
+    if ($p === 22) {
+        return ['key' => 'ssh', 'title' => 'SSH', 'class' => 'mf-spark-port-ssh'];
+    }
+    if (in_array($p, [80, 8080], true)) {
+        return ['key' => 'web', 'title' => 'WEB', 'class' => 'mf-spark-port-web'];
+    }
+    if (in_array($p, [443, 8443], true)) {
+        return ['key' => 'tls', 'title' => 'TLS', 'class' => 'mf-spark-port-tls'];
+    }
+    if ($p === 3389) {
+        return ['key' => 'rdp', 'title' => 'RDP', 'class' => 'mf-spark-port-rdp'];
+    }
+    if ($p === 5228) {
+        return ['key' => 'app', 'title' => 'APP', 'class' => 'mf-spark-port-app'];
+    }
+    if ($p >= 27000 && $p <= 27100) {
+        return ['key' => 'game', 'title' => 'GAME', 'class' => 'mf-spark-port-game'];
+    }
+
+    return ['key' => 'other', 'title' => 'OTHER', 'class' => 'mf-spark-port-default'];
+};
+
 $node_count = $clampInt($data['node_count'] ?? 5, 1, $max_nodes, 5);
 $link_count = $clampInt($data['link_count'] ?? 3, 0, $max_links, 3);
 $extra_count = $clampInt($data['extra_count'] ?? 0, 0, $max_extras, 0);
 $status_count = $clampInt($data['status_count'] ?? 0, 0, $max_status, 0);
 $layout_mode = $clampInt($data['layout_mode'] ?? 0, 0, 1, 0);
-$matrix_speed = $clampInt($data['matrix_speed'] ?? 1, 0, 2, 1);
+$matrix_speed = $clampInt($data['matrix_speed'] ?? 1, 0, 3, 1);
 $matrix_value_count = $clampInt($data['matrix_value_count'] ?? 8, 0, $max_matrix_values, 8);
+$spark_count = $clampInt($data['spark_count'] ?? 0, 0, $max_sparks, 0);
 
 $nodes = [];
 
@@ -171,9 +252,13 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
+            'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
+            'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
+            'problem_count' => $clampInt($data['node'.$i.'_problem_count'] ?? 0, 0, 9999, 0),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => $clampInt($data['node'.$i.'_x'] ?? 10, 2, 90, 10),
             'y' => $clampInt($data['node'.$i.'_y'] ?? 10, 6, 78, 10)
@@ -181,10 +266,18 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
     }
 }
 else {
-    if ($node_count <= 3) $cols = $node_count;
-    elseif ($node_count <= 6) $cols = 3;
-    elseif ($node_count <= 12) $cols = 4;
-    else $cols = 5;
+    if ($node_count <= 3) {
+        $cols = $node_count;
+    }
+    elseif ($node_count <= 6) {
+        $cols = 3;
+    }
+    elseif ($node_count <= 12) {
+        $cols = 4;
+    }
+    else {
+        $cols = 5;
+    }
 
     $rows = max(1, (int) ceil($node_count / $cols));
 
@@ -211,9 +304,13 @@ else {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
+            'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
+            'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
+            'problem_count' => $clampInt($data['node'.$i.'_problem_count'] ?? 0, 0, 9999, 0),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => min(86, max(5, $x)),
             'y' => min(74, max(8, $y))
@@ -227,12 +324,16 @@ for ($i = 1; $i <= $status_count; $i++) {
     $label = trim((string) ($data['status'.$i.'_label'] ?? ''));
     $value = trim((string) ($data['status'.$i.'_value'] ?? ''));
     $class = trim((string) ($data['status'.$i.'_class'] ?? 'neutral'));
+    $hostid = $normalizeId($data['status'.$i.'_hostid'] ?? '');
+    $itemid = $normalizeId($data['status'.$i.'_itemid'] ?? '');
+    $status_url = $getDrilldownUrl($hostid, $itemid);
 
     if ($label === '' && $value === '') {
         continue;
     }
 
     $chip = (new CDiv())->addClass('mf-status-chip mf-status-'.$class);
+    $applyDrilldown($chip, $status_url);
     $chip->addItem((new CDiv($label !== '' ? $label : 'Status '.$i))->addClass('mf-status-chip-label'));
     $chip->addItem((new CDiv($value !== '' ? $value : 'No value'))->addClass('mf-status-chip-value'));
     $status_bar->addItem($chip);
@@ -245,7 +346,7 @@ for ($i = 1; $i <= $matrix_value_count; $i++) {
     $static = trim((string) ($data['matrix'.$i.'_static'] ?? ''));
 
     $text = '';
-    if ($prefix !== '' && $value !== '') {
+    if ($value !== '' && $prefix !== '') {
         $text = $prefix.' '.$value;
     }
     elseif ($value !== '') {
@@ -265,14 +366,14 @@ for ($i = 1; $i <= $matrix_value_count; $i++) {
 
 if (!$matrix_values) {
     $matrix_values = [
-        'NODEMATRIX',
-        'NETWORKFLOW',
+        'MATRIXRAIN',
+        'ZABBIXNETWORKFLOW',
         'FORTIGATEMONITOR',
         'INOUTTRAFFIC',
         'LATENCYHEALTH',
         'LINKSTATUS',
         'PACKETSERRORS',
-        'MATRIXRAIN'
+        'NEONTRACE'
     ];
 }
 
@@ -308,6 +409,19 @@ for ($i = 1; $i <= $link_count; $i++) {
     $has_error = (($data['link'.$i.'_has_error'] ?? '0') === '1');
     $route_style = $clampInt($data['link'.$i.'_style'] ?? 0, 0, 2, 0);
     $show_label = $clampInt($data['link'.$i.'_show_label'] ?? 1, 0, 1, 1) === 1;
+    $in_hostid = $normalizeId($data['link'.$i.'_in_hostid'] ?? '');
+    $out_hostid = $normalizeId($data['link'.$i.'_out_hostid'] ?? '');
+    $health_hostid = $normalizeId($data['link'.$i.'_health_hostid'] ?? '');
+    $in_itemid = $normalizeId($data['link'.$i.'_in_itemid'] ?? '');
+    $out_itemid = $normalizeId($data['link'.$i.'_out_itemid'] ?? '');
+    $loss_itemid = $normalizeId($data['link'.$i.'_loss_itemid'] ?? '');
+    $latency_itemid = $normalizeId($data['link'.$i.'_latency_itemid'] ?? '');
+    $errors_itemid = $normalizeId($data['link'.$i.'_errors_itemid'] ?? '');
+
+    $link_itemid = $in_itemid !== '' ? $in_itemid : ($out_itemid !== '' ? $out_itemid : ($loss_itemid !== '' ? $loss_itemid : ($latency_itemid !== '' ? $latency_itemid : $errors_itemid)));
+    $link_hostid = $health_hostid !== '' ? $health_hostid : ($in_hostid !== '' ? $in_hostid : $out_hostid);
+    $link_drilldown_mode = $clampInt($data['link'.$i.'_drilldown'] ?? WidgetForm::LINK_DRILLDOWN_AUTO, WidgetForm::LINK_DRILLDOWN_AUTO, WidgetForm::LINK_DRILLDOWN_PROBLEMS, WidgetForm::LINK_DRILLDOWN_AUTO);
+    $link_url = $getDrilldownUrl($link_hostid, $link_itemid, $link_drilldown_mode);
 
     $node_box_w = 72;
     $node_box_h = 46;
@@ -474,6 +588,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         [$mx, $my] = $getMidPointOnPolyline($label_points);
 
         $label_box = (new CDiv())->addClass('mf-link-label'.($has_error ? ' mf-link-label-error' : ''));
+        $applyDrilldown($label_box, $link_url);
 
         if ($label !== '') {
             $label_box->addItem((new CDiv($label))->addClass('mf-link-title'));
@@ -507,8 +622,11 @@ for ($i = 1; $i <= $link_count; $i++) {
 $canvas = (new CDiv())->addClass('mf-canvas');
 
 $matrix_bg = (new CDiv())->addClass('mf-matrix-bg');
+$matrix_repeat = ($matrix_speed === WidgetForm::MATRIX_SPEED_VERY_FAST) ? 5 : 3;
+
 for ($i = 0; $i < count($matrix_values); $i++) {
-    $column = (new CDiv($matrix_values[$i]))->addClass('mf-column');
+    $text = trim(str_repeat($matrix_values[$i].' ', $matrix_repeat));
+    $column = (new CDiv($text))->addClass('mf-column');
     $column->setAttribute('style', 'animation-duration: '.$durations[$i % count($durations)].'s;');
     $matrix_bg->addItem($column);
 }
@@ -519,17 +637,29 @@ $canvas
     ->addItem($link_labels_layer);
 
 for ($i = 1; $i <= $node_count; $i++) {
+    $type_meta = $getNodeTypeMeta($nodes[$i]['type']);
+
     $node = (new CDiv())
         ->addClass('mf-node'.($nodes[$i]['has_error'] ? ' mf-node-error' : ''))
         ->setAttribute('style', 'left: '.$nodes[$i]['x'].'%; top: '.$nodes[$i]['y'].'%;');
 
+    $node_url = $getDrilldownUrl($nodes[$i]['hostid']);
+    $applyDrilldown($node, $node_url, 'Open host values');
+
     $head = (new CDiv())->addClass('mf-node-head');
-    $head->addItem((new CDiv($getNodeIcon($nodes[$i]['type'])))->addClass('mf-node-icon'));
+    $head->addItem(
+        (new CDiv($type_meta['text']))
+            ->addClass('mf-node-icon '.$type_meta['class'])
+    );
     $head->addItem((new CDiv($nodes[$i]['label'] !== '' ? $nodes[$i]['label'] : 'Node '.$i))->addClass('mf-node-title'));
     $node->addItem($head);
 
     if ($nodes[$i]['host'] !== '') {
         $node->addItem((new CDiv($shortText($nodes[$i]['host'], 30)))->addClass('mf-node-host'));
+    }
+
+    if ($nodes[$i]['problem_count'] > 0) {
+        $node->addItem((new CDiv($nodes[$i]['problem_count'].' problem'.($nodes[$i]['problem_count'] === 1 ? '' : 's')))->addClass('mf-node-problems'));
     }
 
     $metrics = (new CDiv())->addClass('mf-node-metrics');
@@ -540,16 +670,215 @@ for ($i = 1; $i <= $node_count; $i++) {
     $canvas->addItem($node);
 }
 
+for ($i = 1; $i <= $spark_count; $i++) {
+    $label = trim((string) ($data['spark'.$i.'_label'] ?? ''));
+    $host = trim((string) ($data['spark'.$i.'_host'] ?? ''));
+    $group_mode = $clampInt($data['spark'.$i.'_group_mode'] ?? 0, 0, 2, 0);
+    $x = $clampInt($data['spark'.$i.'_x'] ?? 50, 5, 95, 50);
+    $y = $clampInt($data['spark'.$i.'_y'] ?? 50, 5, 90, 50);
+    $items = $data['spark'.$i.'_items'] ?? [];
+    $count = $clampInt($data['spark'.$i.'_count'] ?? 0, 0, 100, 0);
+    $error = trim((string) ($data['spark'.$i.'_error'] ?? ''));
+
+    $item1_label = trim((string) ($data['spark'.$i.'_item1_label'] ?? ''));
+    $item1_value = trim((string) ($data['spark'.$i.'_item1_value'] ?? ''));
+    $item2_label = trim((string) ($data['spark'.$i.'_item2_label'] ?? ''));
+    $item2_value = trim((string) ($data['spark'.$i.'_item2_value'] ?? ''));
+    $spark_hostid = $normalizeId($data['spark'.$i.'_hostid'] ?? '');
+    $spark_itemid = $normalizeId($data['spark'.$i.'_itemid'] ?? '');
+    $spark_item1_itemid = $normalizeId($data['spark'.$i.'_item1_itemid'] ?? '');
+    $spark_item2_itemid = $normalizeId($data['spark'.$i.'_item2_itemid'] ?? '');
+
+    $spark_target_itemid = $spark_itemid !== '' ? $spark_itemid : ($spark_item1_itemid !== '' ? $spark_item1_itemid : $spark_item2_itemid);
+    $spark_url = $getDrilldownUrl($spark_hostid, $spark_target_itemid);
+
+    if ($label === '' && $host === '' && !$items && $error === '') {
+        continue;
+    }
+
+    $spark = (new CDiv())->addClass('mf-spark');
+    $spark->setAttribute('style', 'left: '.$x.'%; top: '.$y.'%;');
+    $applyDrilldown($spark, $spark_url);
+
+    $spark->addItem((new CDiv(''))->addClass('mf-spark-core'));
+    $spark->addItem((new CDiv($label !== '' ? $label : 'Spark '.$i))->addClass('mf-spark-title'));
+
+    if ($host !== '') {
+        $spark->addItem((new CDiv($shortText($host, 24)))->addClass('mf-spark-host'));
+    }
+
+    if ($error !== '') {
+        $spark->addItem((new CDiv($error))->addClass('mf-spark-error'));
+    }
+    else {
+        $spark->addItem((new CDiv('Flows '.$count))->addClass('mf-spark-count'));
+
+        $own = (new CDiv())->addClass('mf-spark-own-items');
+        if ($item1_label !== '' || $item1_value !== '') {
+            $own->addItem((new CDiv(trim($item1_label.' '.$item1_value)))->addClass('mf-spark-own-line'));
+        }
+        if ($item2_label !== '' || $item2_value !== '') {
+            $own->addItem((new CDiv(trim($item2_label.' '.$item2_value)))->addClass('mf-spark-own-line'));
+        }
+        if ($item1_label !== '' || $item1_value !== '' || $item2_label !== '' || $item2_value !== '') {
+            $spark->addItem($own);
+        }
+
+        $groups = [];
+
+        foreach ($items as $entry) {
+            $process = trim((string) ($entry['process'] ?? ''));
+            $ip = trim((string) ($entry['ip'] ?? ''));
+            $port = trim((string) ($entry['port'] ?? ''));
+            $port_meta = $getSparkPortMeta($port);
+
+            if ($group_mode === 1) {
+                $group_key = strtolower($process !== '' ? $process : 'process');
+                $group_title = strtoupper($process !== '' ? $process : 'PROCESS');
+                $group_class = $port_meta['class'];
+            }
+            elseif ($group_mode === 2) {
+                $group_key = strtolower($ip !== '' ? $ip : 'unknown');
+                $group_title = $ip !== '' ? $ip : 'UNKNOWN';
+                $group_class = $port_meta['class'];
+            }
+            else {
+                $group_key = $port_meta['key'];
+                $group_title = $port_meta['title'];
+                $group_class = $port_meta['class'];
+            }
+
+            if (!array_key_exists($group_key, $groups)) {
+                $groups[$group_key] = [
+                    'title' => $group_title,
+                    'class' => $group_class,
+                    'count' => 0,
+                    'rows' => [],
+                    'seen_ip' => []
+                ];
+            }
+
+            $groups[$group_key]['count']++;
+
+            $ip_key = strtolower($ip);
+            if ($ip_key !== '') {
+                if (!array_key_exists($ip_key, $groups[$group_key]['seen_ip'])) {
+                    if ($group_mode === 1) {
+                        $display = $ip.($port !== '' ? ':'.$port : '');
+                    }
+                    elseif ($group_mode === 2) {
+                        $display = $process !== '' ? $process.($port !== '' ? ':'.$port : '') : ($port !== '' ? ':'.$port : $ip);
+                    }
+                    else {
+                        $display = ($process !== '' ? $process.' ' : '').$ip;
+                    }
+
+                    $groups[$group_key]['seen_ip'][$ip_key] = count($groups[$group_key]['rows']);
+                    $groups[$group_key]['rows'][] = [
+                        'text' => $display,
+                        'count' => 1
+                    ];
+                }
+                else {
+                    $row_index = $groups[$group_key]['seen_ip'][$ip_key];
+                    $groups[$group_key]['rows'][$row_index]['count']++;
+                }
+            }
+            else {
+                $groups[$group_key]['rows'][] = [
+                    'text' => trim(($process !== '' ? $process : 'entry').($port !== '' ? ':'.$port : '')),
+                    'count' => 1
+                ];
+            }
+        }
+
+        $slot_positions = [
+            ['box_left' => 110,  'box_top' => -44,  'line_left' => 16,  'line_top' => 1,   'line_width' => 84, 'line_height' => 2,  'transform' => 'none'],
+            ['box_left' => 90,   'box_top' => -184, 'line_left' => 8,   'line_top' => -34, 'line_width' => 88, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'left center'],
+            ['box_left' => 90,   'box_top' => 120,  'line_left' => 8,   'line_top' => 35,  'line_width' => 88, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'left center'],
+            ['box_left' => -214, 'box_top' => -44,  'line_left' => -98, 'line_top' => 1,   'line_width' => 84, 'line_height' => 2,  'transform' => 'none'],
+            ['box_left' => -194, 'box_top' => -184, 'line_left' => -80, 'line_top' => -34, 'line_width' => 88, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'right center'],
+            ['box_left' => -194, 'box_top' => 120,  'line_left' => -80, 'line_top' => 35,  'line_width' => 88, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'right center'],
+            ['box_left' => -54,  'box_top' => -208, 'line_left' => -1,  'line_top' => -126, 'line_width' => 2, 'line_height' => 90, 'transform' => 'none'],
+            ['box_left' => -54,  'box_top' => 158,  'line_left' => -1,  'line_top' => 26,  'line_width' => 2,  'line_height' => 90, 'transform' => 'none']
+        ];
+
+        $slot_index = 0;
+
+        foreach ($groups as $group) {
+            if ($slot_index >= count($slot_positions)) {
+                break;
+            }
+
+            $slot = $slot_positions[$slot_index];
+            $slot_index++;
+
+            $line_style = 'left: '.$slot['line_left'].'px; top: '.$slot['line_top'].'px; width: '.$slot['line_width'].'px; height: '.$slot['line_height'].'px;';
+            if (!empty($slot['transform']) && $slot['transform'] !== 'none') {
+                $line_style .= ' transform: '.$slot['transform'].';';
+            }
+            if (!empty($slot['origin'])) {
+                $line_style .= ' transform-origin: '.$slot['origin'].';';
+            }
+
+            $line = (new CDiv())->addClass('mf-spark-line '.$group['class']);
+            $line->setAttribute('style', $line_style);
+            $spark->addItem($line);
+
+            $box = (new CDiv())->addClass('mf-spark-group-box '.$group['class']);
+            $box->setAttribute('style', 'left: '.$slot['box_left'].'px; top: '.$slot['box_top'].'px;');
+
+            $box->addItem(
+                (new CDiv($group['title'].' '.$group['count']))
+                    ->addClass('mf-spark-group-title')
+            );
+
+            $shown = 0;
+            foreach ($group['rows'] as $row) {
+                $shown++;
+
+                if ($shown > 4) {
+                    $remaining = count($group['rows']) - 4;
+                    if ($remaining > 0) {
+                        $box->addItem((new CDiv('+'.$remaining.' more'))->addClass('mf-spark-more'));
+                    }
+                    break;
+                }
+
+                $text = $row['text'];
+                if ($row['count'] > 1) {
+                    $text .= ' x'.$row['count'];
+                }
+
+                $box->addItem(
+                    (new CDiv($shortText($text, 28)))
+                        ->addClass('mf-spark-group-item')
+                );
+            }
+
+            $spark->addItem($box);
+        }
+    }
+
+    $canvas->addItem($spark);
+}
+
 $extras = (new CDiv())->addClass('mf-extra-panel');
 
 for ($i = 1; $i <= $extra_count; $i++) {
     $label = trim((string) ($data['extra'.$i.'_label'] ?? ''));
     $host = trim((string) ($data['extra'.$i.'_host'] ?? ''));
     $value = trim((string) ($data['extra'.$i.'_value'] ?? ''));
+    $hostid = $normalizeId($data['extra'.$i.'_hostid'] ?? '');
+    $itemid = $normalizeId($data['extra'.$i.'_itemid'] ?? '');
+    $extra_url = $getDrilldownUrl($hostid, $itemid);
 
-    if ($label === '' && $host === '' && $value === '') continue;
+    if ($label === '' && $host === '' && $value === '') {
+        continue;
+    }
 
     $card = (new CDiv())->addClass('mf-extra-card');
+    $applyDrilldown($card, $extra_url);
 
     $title = $label !== '' ? $label : 'Extra '.$i;
     $card->addItem((new CDiv($title))->addClass('mf-extra-title'));

@@ -7,6 +7,7 @@ window.matrix_firewall_form = new class {
         const maxExtras = 10;
         const maxStatus = 10;
         const maxMatrix = 20;
+        const maxSparks = 6;
 
         const findField = (name) => {
             return document.querySelector('[name="' + name + '"]')
@@ -52,6 +53,7 @@ window.matrix_firewall_form = new class {
             const extraCount = getIntValue('extra_count', 0);
             const statusCount = getIntValue('status_count', 0);
             const matrixCount = getIntValue('matrix_value_count', 0);
+            const sparkCount = getIntValue('spark_count', 0);
 
             for (let i = 1; i <= maxNodes; i++) {
                 const visible = i <= nodeCount;
@@ -71,6 +73,7 @@ window.matrix_firewall_form = new class {
                 showField('link' + i + '_to', visible);
                 showField('link' + i + '_style', visible);
                 showField('link' + i + '_show_label', visible);
+                showField('link' + i + '_drilldown', visible);
                 showField('link' + i + '_in_host', visible);
                 showField('link' + i + '_in_key', visible);
                 showField('link' + i + '_out_host', visible);
@@ -105,6 +108,22 @@ window.matrix_firewall_form = new class {
                 showField('matrix' + i + '_host', visible);
                 showField('matrix' + i + '_key', visible);
                 showField('matrix' + i + '_static', visible);
+                showField('matrix' + i + '_random', visible);
+            }
+
+            for (let i = 1; i <= maxSparks; i++) {
+                const visible = i <= sparkCount;
+                showField('spark' + i + '_label', visible);
+                showField('spark' + i + '_host', visible);
+                showField('spark' + i + '_key', visible);
+                showField('spark' + i + '_group_mode', visible);
+                showField('spark' + i + '_x', visible);
+                showField('spark' + i + '_y', visible);
+                showField('spark' + i + '_max', visible);
+                showField('spark' + i + '_item1_label', visible);
+                showField('spark' + i + '_item1_key', visible);
+                showField('spark' + i + '_item2_label', visible);
+                showField('spark' + i + '_item2_key', visible);
             }
         };
 
@@ -118,6 +137,7 @@ window.matrix_firewall_form = new class {
                 || name.includes('extra_count')
                 || name.includes('status_count')
                 || name.includes('matrix_value_count')
+                || name.includes('spark_count')
             ) {
                 refresh();
             }

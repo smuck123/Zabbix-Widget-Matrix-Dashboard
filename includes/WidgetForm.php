@@ -14,6 +14,7 @@ class WidgetForm extends CWidgetForm {
     public const MAX_EXTRAS = 10;
     public const MAX_STATUS = 10;
     public const MAX_MATRIX_VALUES = 20;
+    public const MAX_SPARKS = 6;
 
     public const LAYOUT_AUTO = 0;
     public const LAYOUT_MANUAL = 1;
@@ -29,6 +30,11 @@ class WidgetForm extends CWidgetForm {
     public const LINK_STYLE_STRAIGHT = 1;
     public const LINK_STYLE_CURVED = 2;
 
+    public const LINK_DRILLDOWN_AUTO = 0;
+    public const LINK_DRILLDOWN_GRAPH = 1;
+    public const LINK_DRILLDOWN_LATEST = 2;
+    public const LINK_DRILLDOWN_PROBLEMS = 3;
+
     public const NODE_TYPE_GENERIC = 0;
     public const NODE_TYPE_FIREWALL = 1;
     public const NODE_TYPE_CLOUD = 2;
@@ -42,6 +48,11 @@ class WidgetForm extends CWidgetForm {
     public const MATRIX_SPEED_SLOW = 0;
     public const MATRIX_SPEED_NORMAL = 1;
     public const MATRIX_SPEED_FAST = 2;
+    public const MATRIX_SPEED_VERY_FAST = 3;
+
+    public const SPARK_GROUP_PORT = 0;
+    public const SPARK_GROUP_PROCESS = 1;
+    public const SPARK_GROUP_IP = 2;
 
     private function getNumberOptions(int $min, int $max): array {
         $options = [];
@@ -121,6 +132,15 @@ class WidgetForm extends CWidgetForm {
         ];
     }
 
+    private function getLinkDrilldownOptions(): array {
+        return [
+            self::LINK_DRILLDOWN_AUTO => 'Auto (Graph, fallback Latest values)',
+            self::LINK_DRILLDOWN_GRAPH => 'Graph',
+            self::LINK_DRILLDOWN_LATEST => 'Latest values',
+            self::LINK_DRILLDOWN_PROBLEMS => 'Problems'
+        ];
+    }
+
     private function getNodeTypeOptions(): array {
         return [
             self::NODE_TYPE_GENERIC => 'Generic',
@@ -139,7 +159,16 @@ class WidgetForm extends CWidgetForm {
         return [
             self::MATRIX_SPEED_SLOW => 'Slow',
             self::MATRIX_SPEED_NORMAL => 'Normal',
-            self::MATRIX_SPEED_FAST => 'Fast'
+            self::MATRIX_SPEED_FAST => 'Fast',
+            self::MATRIX_SPEED_VERY_FAST => 'Very fast'
+        ];
+    }
+
+    private function getSparkGroupingOptions(): array {
+        return [
+            self::SPARK_GROUP_PORT => 'Group by port',
+            self::SPARK_GROUP_PROCESS => 'Group by process',
+            self::SPARK_GROUP_IP => 'Group by remote IP'
         ];
     }
 
@@ -148,9 +177,11 @@ class WidgetForm extends CWidgetForm {
         $node_options = $this->getNodeOptions();
         $status_modes = $this->getStatusModeOptions();
         $link_styles = $this->getLinkStyleOptions();
+        $link_drilldowns = $this->getLinkDrilldownOptions();
         $yesno = $this->getYesNoOptions();
         $node_types = $this->getNodeTypeOptions();
         $matrix_speeds = $this->getMatrixSpeedOptions();
+        $spark_grouping = $this->getSparkGroupingOptions();
 
         $this
             ->addField((new CWidgetFieldSelect('layout_mode', 'Layout mode', $this->getLayoutOptions()))->setDefault(self::LAYOUT_AUTO))
@@ -160,7 +191,8 @@ class WidgetForm extends CWidgetForm {
             ->addField((new CWidgetFieldSelect('link_count', 'How many links to show', $this->getNumberOptions(0, self::MAX_LINKS)))->setDefault(1))
             ->addField((new CWidgetFieldSelect('extra_count', 'Extra items to show', $this->getNumberOptions(0, self::MAX_EXTRAS)))->setDefault(0))
             ->addField((new CWidgetFieldSelect('status_count', 'Status items to show', $this->getNumberOptions(0, self::MAX_STATUS)))->setDefault(0))
-            ->addField((new CWidgetFieldSelect('matrix_value_count', 'Matrix background values', $this->getNumberOptions(0, self::MAX_MATRIX_VALUES)))->setDefault(8));
+            ->addField((new CWidgetFieldSelect('matrix_value_count', 'Matrix background values', $this->getNumberOptions(0, self::MAX_MATRIX_VALUES)))->setDefault(8))
+            ->addField((new CWidgetFieldSelect('spark_count', 'Spark zones', $this->getNumberOptions(0, self::MAX_SPARKS)))->setDefault(0));
 
         for ($i = 1; $i <= self::MAX_NODES; $i++) {
             $this
@@ -180,6 +212,7 @@ class WidgetForm extends CWidgetForm {
                 ->addField((new CWidgetFieldSelect('link'.$i.'_to', 'Link '.$i.' to node', $node_options))->setDefault(2))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_style', 'Link '.$i.' route style', $link_styles))->setDefault(self::LINK_STYLE_ELBOW))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_show_label', 'Link '.$i.' show label', $yesno))->setDefault(1))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_drilldown', 'Link '.$i.' click target', $link_drilldowns))->setDefault(self::LINK_DRILLDOWN_AUTO))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_in_host', 'Link '.$i.' IN host', $host_options))->setDefault(0))
                 ->addField((new CWidgetFieldTextBox('link'.$i.'_in_key', 'Link '.$i.' IN item key'))->setDefault(''))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_out_host', 'Link '.$i.' OUT host', $host_options))->setDefault(0))
@@ -213,7 +246,23 @@ class WidgetForm extends CWidgetForm {
                 ->addField((new CWidgetFieldTextBox('matrix'.$i.'_label', 'Matrix '.$i.' prefix text'))->setDefault(''))
                 ->addField((new CWidgetFieldSelect('matrix'.$i.'_host', 'Matrix '.$i.' host', $host_options))->setDefault(0))
                 ->addField((new CWidgetFieldTextBox('matrix'.$i.'_key', 'Matrix '.$i.' item key'))->setDefault(''))
-                ->addField((new CWidgetFieldTextBox('matrix'.$i.'_static', 'Matrix '.$i.' static text'))->setDefault(''));
+                ->addField((new CWidgetFieldTextBox('matrix'.$i.'_static', 'Matrix '.$i.' static text'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('matrix'.$i.'_random', 'Matrix '.$i.' random text', $yesno))->setDefault(0));
+        }
+
+        for ($i = 1; $i <= self::MAX_SPARKS; $i++) {
+            $this
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_label', 'Spark '.$i.' label'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('spark'.$i.'_host', 'Spark '.$i.' host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_key', 'Spark '.$i.' JSON item key'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('spark'.$i.'_group_mode', 'Spark '.$i.' grouping', $spark_grouping))->setDefault(self::SPARK_GROUP_PORT))
+                ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_x', 'Spark '.$i.' X %'))->setDefault(50))
+                ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_y', 'Spark '.$i.' Y %'))->setDefault(50))
+                ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_max', 'Spark '.$i.' max links'))->setDefault(12))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_item1_label', 'Spark '.$i.' item 1 label'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_item1_key', 'Spark '.$i.' item 1 key'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_item2_label', 'Spark '.$i.' item 2 label'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_item2_key', 'Spark '.$i.' item 2 key'))->setDefault(''));
         }
 
         return $this;

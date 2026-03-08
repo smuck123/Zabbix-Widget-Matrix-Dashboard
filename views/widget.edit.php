@@ -18,6 +18,7 @@ $form = (new CWidgetFormView($data))
             ->addField(new CWidgetFieldSelectView($data['fields']['extra_count']))
             ->addField(new CWidgetFieldSelectView($data['fields']['status_count']))
             ->addField(new CWidgetFieldSelectView($data['fields']['matrix_value_count']))
+            ->addField(new CWidgetFieldSelectView($data['fields']['spark_count']))
     );
 
 $nodes_fieldset = new CWidgetFormFieldsetCollapsibleView('Nodes');
@@ -41,6 +42,7 @@ for ($i = 1; $i <= WidgetForm::MAX_LINKS; $i++) {
         ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_to']))
         ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_style']))
         ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_show_label']))
+        ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_drilldown']))
         ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_in_host']))
         ->addField(new CWidgetFieldTextBoxView($data['fields']['link'.$i.'_in_key']))
         ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_out_host']))
@@ -80,11 +82,29 @@ for ($i = 1; $i <= WidgetForm::MAX_MATRIX_VALUES; $i++) {
         ->addField(new CWidgetFieldTextBoxView($data['fields']['matrix'.$i.'_label']))
         ->addField(new CWidgetFieldSelectView($data['fields']['matrix'.$i.'_host']))
         ->addField(new CWidgetFieldTextBoxView($data['fields']['matrix'.$i.'_key']))
-        ->addField(new CWidgetFieldTextBoxView($data['fields']['matrix'.$i.'_static']));
+        ->addField(new CWidgetFieldTextBoxView($data['fields']['matrix'.$i.'_static']))
+        ->addField(new CWidgetFieldSelectView($data['fields']['matrix'.$i.'_random']));
+}
+$form->addFieldset($matrix_fieldset);
+
+$spark_fieldset = new CWidgetFormFieldsetCollapsibleView('Spark zones');
+for ($i = 1; $i <= WidgetForm::MAX_SPARKS; $i++) {
+    $spark_fieldset
+        ->addField(new CWidgetFieldTextBoxView($data['fields']['spark'.$i.'_label']))
+        ->addField(new CWidgetFieldSelectView($data['fields']['spark'.$i.'_host']))
+        ->addField(new CWidgetFieldTextBoxView($data['fields']['spark'.$i.'_key']))
+        ->addField(new CWidgetFieldSelectView($data['fields']['spark'.$i.'_group_mode']))
+        ->addField(new CWidgetFieldIntegerBoxView($data['fields']['spark'.$i.'_x']))
+        ->addField(new CWidgetFieldIntegerBoxView($data['fields']['spark'.$i.'_y']))
+        ->addField(new CWidgetFieldIntegerBoxView($data['fields']['spark'.$i.'_max']))
+        ->addField(new CWidgetFieldTextBoxView($data['fields']['spark'.$i.'_item1_label']))
+        ->addField(new CWidgetFieldTextBoxView($data['fields']['spark'.$i.'_item1_key']))
+        ->addField(new CWidgetFieldTextBoxView($data['fields']['spark'.$i.'_item2_label']))
+        ->addField(new CWidgetFieldTextBoxView($data['fields']['spark'.$i.'_item2_key']));
 }
 
 $form
-    ->addFieldset($matrix_fieldset)
+    ->addFieldset($spark_fieldset)
     ->includeJsFile('widget.edit.js.php')
     ->addJavaScript('window.matrix_firewall_form.init();')
     ->show();
