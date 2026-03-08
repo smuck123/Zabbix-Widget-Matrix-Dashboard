@@ -212,6 +212,24 @@ class WidgetView extends CControllerDashboardWidgetView {
         return ['text' => $raw, 'class' => 'neutral'];
     }
 
+    private function getHostProblemCount(string $hostid): int {
+        if ($hostid === '' || $hostid === '0') {
+            return 0;
+        }
+
+        try {
+            return (int) \API::Problem()->get([
+                'hostids' => [(int) $hostid],
+                'suppressed' => false,
+                'recent' => true,
+                'countOutput' => true
+            ]);
+        }
+        catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
     private function parseSparkJson(string $json, int $max = 12): array {
         $result = [
             'count' => 0,
@@ -299,7 +317,10 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['node'.$i.'_mem_value'] = $this->formatGeneric($mem['text']);
             $data['node'.$i.'_cpu_itemid'] = $cpu['itemid'];
             $data['node'.$i.'_mem_itemid'] = $mem['itemid'];
-            $data['node'.$i.'_has_error'] = ($cpu['has_error'] || $mem['has_error']) ? '1' : '0';
+            $problem_count = $this->getHostProblemCount($node_hostid);
+
+            $data['node'.$i.'_problem_count'] = (string) $problem_count;
+            $data['node'.$i.'_has_error'] = ($cpu['has_error'] || $mem['has_error'] || $problem_count > 0) ? '1' : '0';
         }
 
         for ($i = 1; $i <= WidgetForm::MAX_LINKS; $i++) {
@@ -312,6 +333,7 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['link'.$i.'_to'] = $this->getField($fields, $inputs, 'link'.$i.'_to', '2');
             $data['link'.$i.'_style'] = $this->getField($fields, $inputs, 'link'.$i.'_style', '0');
             $data['link'.$i.'_show_label'] = $this->getField($fields, $inputs, 'link'.$i.'_show_label', '1');
+            $data['link'.$i.'_drilldown'] = $this->getField($fields, $inputs, 'link'.$i.'_drilldown', (string) WidgetForm::LINK_DRILLDOWN_AUTO);
 
             $data['link'.$i.'_in_host'] = $this->hostIdToName($in_hostid);
             $data['link'.$i.'_out_host'] = $this->hostIdToName($out_hostid);

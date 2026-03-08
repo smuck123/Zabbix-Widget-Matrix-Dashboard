@@ -120,8 +120,8 @@
 }
 
 .mf-svg-glow {
-    filter: blur(6px);
-    opacity: 0.22;
+    filter: blur(7px);
+    opacity: 0.34;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
@@ -129,7 +129,7 @@
 .mf-svg-line {
     stroke-linecap: round;
     stroke-linejoin: round;
-    filter: drop-shadow(0 0 6px rgba(140, 255, 200, 0.45));
+    filter: drop-shadow(0 0 9px rgba(140, 255, 200, 0.58));
 }
 
 .mf-svg-ball {
@@ -215,9 +215,30 @@
 }
 
 .mf-node-error {
-    box-shadow:
-        inset 0 0 16px rgba(255, 95, 95, 0.05),
-        0 0 14px rgba(255, 95, 95, 0.10);
+    border-color: rgba(255, 95, 95, 0.55);
+    animation: mf-node-alert 0.75s infinite ease-in-out;
+}
+
+
+@keyframes mf-node-alert {
+    0% {
+        box-shadow:
+            inset 0 0 16px rgba(255, 95, 95, 0.10),
+            0 0 14px rgba(255, 95, 95, 0.20),
+            0 0 0 rgba(255, 95, 95, 0.00);
+    }
+    50% {
+        box-shadow:
+            inset 0 0 22px rgba(255, 95, 95, 0.18),
+            0 0 26px rgba(255, 95, 95, 0.38),
+            0 0 18px rgba(255, 95, 95, 0.25);
+    }
+    100% {
+        box-shadow:
+            inset 0 0 16px rgba(255, 95, 95, 0.10),
+            0 0 14px rgba(255, 95, 95, 0.20),
+            0 0 0 rgba(255, 95, 95, 0.00);
+    }
 }
 
 .mf-node-head {
@@ -266,6 +287,20 @@
     color: #9ed2ad;
     line-height: 1.2;
     word-break: break-word;
+}
+
+
+.mf-node-problems {
+    margin-top: 6px;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #ffe1e1;
+    border: 1px solid rgba(255, 95, 95, 0.50);
+    background: rgba(100, 20, 20, 0.55);
+    box-shadow: 0 0 10px rgba(255, 95, 95, 0.20);
 }
 
 .mf-node-metrics {

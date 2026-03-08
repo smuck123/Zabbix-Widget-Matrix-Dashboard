@@ -30,6 +30,11 @@ class WidgetForm extends CWidgetForm {
     public const LINK_STYLE_STRAIGHT = 1;
     public const LINK_STYLE_CURVED = 2;
 
+    public const LINK_DRILLDOWN_AUTO = 0;
+    public const LINK_DRILLDOWN_GRAPH = 1;
+    public const LINK_DRILLDOWN_LATEST = 2;
+    public const LINK_DRILLDOWN_PROBLEMS = 3;
+
     public const NODE_TYPE_GENERIC = 0;
     public const NODE_TYPE_FIREWALL = 1;
     public const NODE_TYPE_CLOUD = 2;
@@ -127,6 +132,15 @@ class WidgetForm extends CWidgetForm {
         ];
     }
 
+    private function getLinkDrilldownOptions(): array {
+        return [
+            self::LINK_DRILLDOWN_AUTO => 'Auto (Graph, fallback Latest values)',
+            self::LINK_DRILLDOWN_GRAPH => 'Graph',
+            self::LINK_DRILLDOWN_LATEST => 'Latest values',
+            self::LINK_DRILLDOWN_PROBLEMS => 'Problems'
+        ];
+    }
+
     private function getNodeTypeOptions(): array {
         return [
             self::NODE_TYPE_GENERIC => 'Generic',
@@ -163,6 +177,7 @@ class WidgetForm extends CWidgetForm {
         $node_options = $this->getNodeOptions();
         $status_modes = $this->getStatusModeOptions();
         $link_styles = $this->getLinkStyleOptions();
+        $link_drilldowns = $this->getLinkDrilldownOptions();
         $yesno = $this->getYesNoOptions();
         $node_types = $this->getNodeTypeOptions();
         $matrix_speeds = $this->getMatrixSpeedOptions();
@@ -197,6 +212,7 @@ class WidgetForm extends CWidgetForm {
                 ->addField((new CWidgetFieldSelect('link'.$i.'_to', 'Link '.$i.' to node', $node_options))->setDefault(2))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_style', 'Link '.$i.' route style', $link_styles))->setDefault(self::LINK_STYLE_ELBOW))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_show_label', 'Link '.$i.' show label', $yesno))->setDefault(1))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_drilldown', 'Link '.$i.' click target', $link_drilldowns))->setDefault(self::LINK_DRILLDOWN_AUTO))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_in_host', 'Link '.$i.' IN host', $host_options))->setDefault(0))
                 ->addField((new CWidgetFieldTextBox('link'.$i.'_in_key', 'Link '.$i.' IN item key'))->setDefault(''))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_out_host', 'Link '.$i.' OUT host', $host_options))->setDefault(0))
