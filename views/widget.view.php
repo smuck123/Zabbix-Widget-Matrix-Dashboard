@@ -59,6 +59,20 @@ $getDrilldownUrl = static function(string $hostid, string $itemid = ''): string 
     return '';
 };
 
+$applyDrilldown = static function($element, string $url, string $title = 'Open drill-down'): void {
+    if ($url === '') {
+        return;
+    }
+
+    $safe_url = str_replace("'", "\\'", $url);
+
+    $element->addClass('mf-drilldown');
+    $element->setAttribute('title', $title);
+    $element->setAttribute('tabindex', '0');
+    $element->setAttribute('role', 'link');
+    $element->setAttribute('onclick', "window.open('{$safe_url}', '_blank', 'noopener'); return false;");
+};
+
 $getNodeTypeMeta = static function(int $type): array {
     switch ($type) {
         case WidgetForm::NODE_TYPE_FIREWALL:
@@ -300,11 +314,7 @@ for ($i = 1; $i <= $status_count; $i++) {
     }
 
     $chip = (new CDiv())->addClass('mf-status-chip mf-status-'.$class);
-    if ($status_url !== '') {
-        $chip->setAttribute('data-mf-drilldown-url', $status_url);
-        $chip->addClass('mf-drilldown');
-        $chip->setAttribute('title', 'Open drill-down');
-    }
+    $applyDrilldown($chip, $status_url);
     $chip->addItem((new CDiv($label !== '' ? $label : 'Status '.$i))->addClass('mf-status-chip-label'));
     $chip->addItem((new CDiv($value !== '' ? $value : 'No value'))->addClass('mf-status-chip-value'));
     $status_bar->addItem($chip);
@@ -558,11 +568,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         [$mx, $my] = $getMidPointOnPolyline($label_points);
 
         $label_box = (new CDiv())->addClass('mf-link-label'.($has_error ? ' mf-link-label-error' : ''));
-        if ($link_url !== '') {
-            $label_box->setAttribute('data-mf-drilldown-url', $link_url);
-            $label_box->addClass('mf-drilldown');
-            $label_box->setAttribute('title', 'Open drill-down');
-        }
+        $applyDrilldown($label_box, $link_url);
 
         if ($label !== '') {
             $label_box->addItem((new CDiv($label))->addClass('mf-link-title'));
@@ -618,11 +624,7 @@ for ($i = 1; $i <= $node_count; $i++) {
         ->setAttribute('style', 'left: '.$nodes[$i]['x'].'%; top: '.$nodes[$i]['y'].'%;');
 
     $node_url = $getDrilldownUrl($nodes[$i]['hostid']);
-    if ($node_url !== '') {
-        $node->setAttribute('data-mf-drilldown-url', $node_url);
-        $node->addClass('mf-drilldown');
-        $node->setAttribute('title', 'Open host values');
-    }
+    $applyDrilldown($node, $node_url, 'Open host values');
 
     $head = (new CDiv())->addClass('mf-node-head');
     $head->addItem(
@@ -672,11 +674,7 @@ for ($i = 1; $i <= $spark_count; $i++) {
 
     $spark = (new CDiv())->addClass('mf-spark');
     $spark->setAttribute('style', 'left: '.$x.'%; top: '.$y.'%;');
-    if ($spark_url !== '') {
-        $spark->setAttribute('data-mf-drilldown-url', $spark_url);
-        $spark->addClass('mf-drilldown');
-        $spark->setAttribute('title', 'Open drill-down');
-    }
+    $applyDrilldown($spark, $spark_url);
 
     $spark->addItem((new CDiv(''))->addClass('mf-spark-core'));
     $spark->addItem((new CDiv($label !== '' ? $label : 'Spark '.$i))->addClass('mf-spark-title'));
@@ -856,11 +854,7 @@ for ($i = 1; $i <= $extra_count; $i++) {
     }
 
     $card = (new CDiv())->addClass('mf-extra-card');
-    if ($extra_url !== '') {
-        $card->setAttribute('data-mf-drilldown-url', $extra_url);
-        $card->addClass('mf-drilldown');
-        $card->setAttribute('title', 'Open drill-down');
-    }
+    $applyDrilldown($card, $extra_url);
 
     $title = $label !== '' ? $label : 'Extra '.$i;
     $card->addItem((new CDiv($title))->addClass('mf-extra-title'));
