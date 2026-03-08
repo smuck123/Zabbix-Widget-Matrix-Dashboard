@@ -42,6 +42,23 @@ $shortText = static function(string $value, int $limit = 28): string {
     return $value;
 };
 
+$normalizeId = static function($value): string {
+    $id = trim((string) $value);
+    return ($id !== '' && $id !== '0') ? $id : '';
+};
+
+$getDrilldownUrl = static function(string $hostid, string $itemid = ''): string {
+    if ($itemid !== '' && $itemid !== '0') {
+        return 'history.php?action=showgraph&itemids[]='.$itemid;
+    }
+
+    if ($hostid !== '' && $hostid !== '0') {
+        return 'zabbix.php?action=latest.view&hostids[]='.$hostid;
+    }
+
+    return '';
+};
+
 $getNodeTypeMeta = static function(int $type): array {
     switch ($type) {
         case WidgetForm::NODE_TYPE_FIREWALL:
@@ -204,9 +221,12 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
+            'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
+            'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => $clampInt($data['node'.$i.'_x'] ?? 10, 2, 90, 10),
             'y' => $clampInt($data['node'.$i.'_y'] ?? 10, 6, 78, 10)
@@ -252,9 +272,12 @@ else {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
+            'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
+            'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => min(86, max(5, $x)),
             'y' => min(74, max(8, $y))
@@ -268,12 +291,20 @@ for ($i = 1; $i <= $status_count; $i++) {
     $label = trim((string) ($data['status'.$i.'_label'] ?? ''));
     $value = trim((string) ($data['status'.$i.'_value'] ?? ''));
     $class = trim((string) ($data['status'.$i.'_class'] ?? 'neutral'));
+    $hostid = $normalizeId($data['status'.$i.'_hostid'] ?? '');
+    $itemid = $normalizeId($data['status'.$i.'_itemid'] ?? '');
+    $status_url = $getDrilldownUrl($hostid, $itemid);
 
     if ($label === '' && $value === '') {
         continue;
     }
 
     $chip = (new CDiv())->addClass('mf-status-chip mf-status-'.$class);
+    if ($status_url !== '') {
+        $chip->setAttribute('data-mf-drilldown-url', $status_url);
+        $chip->addClass('mf-drilldown');
+        $chip->setAttribute('title', 'Open drill-down');
+    }
     $chip->addItem((new CDiv($label !== '' ? $label : 'Status '.$i))->addClass('mf-status-chip-label'));
     $chip->addItem((new CDiv($value !== '' ? $value : 'No value'))->addClass('mf-status-chip-value'));
     $status_bar->addItem($chip);
@@ -349,6 +380,18 @@ for ($i = 1; $i <= $link_count; $i++) {
     $has_error = (($data['link'.$i.'_has_error'] ?? '0') === '1');
     $route_style = $clampInt($data['link'.$i.'_style'] ?? 0, 0, 2, 0);
     $show_label = $clampInt($data['link'.$i.'_show_label'] ?? 1, 0, 1, 1) === 1;
+    $in_hostid = $normalizeId($data['link'.$i.'_in_hostid'] ?? '');
+    $out_hostid = $normalizeId($data['link'.$i.'_out_hostid'] ?? '');
+    $health_hostid = $normalizeId($data['link'.$i.'_health_hostid'] ?? '');
+    $in_itemid = $normalizeId($data['link'.$i.'_in_itemid'] ?? '');
+    $out_itemid = $normalizeId($data['link'.$i.'_out_itemid'] ?? '');
+    $loss_itemid = $normalizeId($data['link'.$i.'_loss_itemid'] ?? '');
+    $latency_itemid = $normalizeId($data['link'.$i.'_latency_itemid'] ?? '');
+    $errors_itemid = $normalizeId($data['link'.$i.'_errors_itemid'] ?? '');
+
+    $link_itemid = $in_itemid !== '' ? $in_itemid : ($out_itemid !== '' ? $out_itemid : ($loss_itemid !== '' ? $loss_itemid : ($latency_itemid !== '' ? $latency_itemid : $errors_itemid)));
+    $link_hostid = $health_hostid !== '' ? $health_hostid : ($in_hostid !== '' ? $in_hostid : $out_hostid);
+    $link_url = $getDrilldownUrl($link_hostid, $link_itemid);
 
     $node_box_w = 72;
     $node_box_h = 46;
@@ -515,6 +558,11 @@ for ($i = 1; $i <= $link_count; $i++) {
         [$mx, $my] = $getMidPointOnPolyline($label_points);
 
         $label_box = (new CDiv())->addClass('mf-link-label'.($has_error ? ' mf-link-label-error' : ''));
+        if ($link_url !== '') {
+            $label_box->setAttribute('data-mf-drilldown-url', $link_url);
+            $label_box->addClass('mf-drilldown');
+            $label_box->setAttribute('title', 'Open drill-down');
+        }
 
         if ($label !== '') {
             $label_box->addItem((new CDiv($label))->addClass('mf-link-title'));
@@ -569,6 +617,13 @@ for ($i = 1; $i <= $node_count; $i++) {
         ->addClass('mf-node'.($nodes[$i]['has_error'] ? ' mf-node-error' : ''))
         ->setAttribute('style', 'left: '.$nodes[$i]['x'].'%; top: '.$nodes[$i]['y'].'%;');
 
+    $node_url = $getDrilldownUrl($nodes[$i]['hostid']);
+    if ($node_url !== '') {
+        $node->setAttribute('data-mf-drilldown-url', $node_url);
+        $node->addClass('mf-drilldown');
+        $node->setAttribute('title', 'Open host values');
+    }
+
     $head = (new CDiv())->addClass('mf-node-head');
     $head->addItem(
         (new CDiv($type_meta['text']))
@@ -603,6 +658,13 @@ for ($i = 1; $i <= $spark_count; $i++) {
     $item1_value = trim((string) ($data['spark'.$i.'_item1_value'] ?? ''));
     $item2_label = trim((string) ($data['spark'.$i.'_item2_label'] ?? ''));
     $item2_value = trim((string) ($data['spark'.$i.'_item2_value'] ?? ''));
+    $spark_hostid = $normalizeId($data['spark'.$i.'_hostid'] ?? '');
+    $spark_itemid = $normalizeId($data['spark'.$i.'_itemid'] ?? '');
+    $spark_item1_itemid = $normalizeId($data['spark'.$i.'_item1_itemid'] ?? '');
+    $spark_item2_itemid = $normalizeId($data['spark'.$i.'_item2_itemid'] ?? '');
+
+    $spark_target_itemid = $spark_itemid !== '' ? $spark_itemid : ($spark_item1_itemid !== '' ? $spark_item1_itemid : $spark_item2_itemid);
+    $spark_url = $getDrilldownUrl($spark_hostid, $spark_target_itemid);
 
     if ($label === '' && $host === '' && !$items && $error === '') {
         continue;
@@ -610,6 +672,11 @@ for ($i = 1; $i <= $spark_count; $i++) {
 
     $spark = (new CDiv())->addClass('mf-spark');
     $spark->setAttribute('style', 'left: '.$x.'%; top: '.$y.'%;');
+    if ($spark_url !== '') {
+        $spark->setAttribute('data-mf-drilldown-url', $spark_url);
+        $spark->addClass('mf-drilldown');
+        $spark->setAttribute('title', 'Open drill-down');
+    }
 
     $spark->addItem((new CDiv(''))->addClass('mf-spark-core'));
     $spark->addItem((new CDiv($label !== '' ? $label : 'Spark '.$i))->addClass('mf-spark-title'));
@@ -780,12 +847,20 @@ for ($i = 1; $i <= $extra_count; $i++) {
     $label = trim((string) ($data['extra'.$i.'_label'] ?? ''));
     $host = trim((string) ($data['extra'.$i.'_host'] ?? ''));
     $value = trim((string) ($data['extra'.$i.'_value'] ?? ''));
+    $hostid = $normalizeId($data['extra'.$i.'_hostid'] ?? '');
+    $itemid = $normalizeId($data['extra'.$i.'_itemid'] ?? '');
+    $extra_url = $getDrilldownUrl($hostid, $itemid);
 
     if ($label === '' && $host === '' && $value === '') {
         continue;
     }
 
     $card = (new CDiv())->addClass('mf-extra-card');
+    if ($extra_url !== '') {
+        $card->setAttribute('data-mf-drilldown-url', $extra_url);
+        $card->addClass('mf-drilldown');
+        $card->setAttribute('title', 'Open drill-down');
+    }
 
     $title = $label !== '' ? $label : 'Extra '.$i;
     $card->addItem((new CDiv($title))->addClass('mf-extra-title'));
@@ -802,6 +877,33 @@ $legend_text = (($data['demo_mode'] ?? '0') === '1')
     ? 'Demo fallback enabled: missing items use random values.'
     : 'High traffic = thicker line, hotter color, faster balls.';
 
+$drilldown_js = <<<'JS'
+(function() {
+    const openDrilldown = (el) => {
+        const url = el && el.getAttribute('data-mf-drilldown-url');
+        if (!url) {
+            return;
+        }
+
+        window.open(url, '_blank', 'noopener');
+    };
+
+    document.addEventListener('click', function(e) {
+        const trigger = e.target.closest('[data-mf-drilldown-url]');
+        if (!trigger) {
+            return;
+        }
+
+        if (e.target.closest('a, button, input, textarea, select, [role="button"]')) {
+            return;
+        }
+
+        e.preventDefault();
+        openDrilldown(trigger);
+    });
+})();
+JS;
+
 (new CWidgetView($data))
     ->addItem(
         (new CDiv())
@@ -813,4 +915,5 @@ $legend_text = (($data['demo_mode'] ?? '0') === '1')
             ->addItem((new CDiv($legend_text))->addClass('mf-legend'))
             ->addItem($extras)
     )
+    ->addJavaScript($drilldown_js)
     ->show();

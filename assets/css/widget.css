@@ -156,6 +156,15 @@
         0 0 10px rgba(0, 0, 0, 0.55),
         inset 0 0 8px rgba(70, 255, 130, 0.06);
     box-sizing: border-box;
+    pointer-events: auto;
+}
+
+.mf-drilldown {
+    cursor: pointer;
+}
+
+.mf-drilldown:hover {
+    filter: brightness(1.05);
 }
 
 .mf-link-label-error {
