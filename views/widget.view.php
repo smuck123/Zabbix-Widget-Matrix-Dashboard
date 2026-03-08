@@ -1048,13 +1048,24 @@ for ($i = 1; $i <= $extra_count; $i++) {
 
 $drag_script = <<<'JS'
 (function() {
-    const labels = document.querySelectorAll('.mf-link-label[data-mf-link-id]');
+    const script = document.currentScript;
+    const root = script && script.previousElementSibling && script.previousElementSibling.classList.contains('mf-root')
+        ? script.previousElementSibling
+        : null;
+
+    if (!root) {
+        return;
+    }
+
+    const labels = root.querySelectorAll('.mf-link-label[data-mf-link-id]');
 
     if (!labels.length) {
         return;
     }
 
-    const storeKey = 'mf-link-label-offsets-v1';
+    const roots = Array.from(document.querySelectorAll('.mf-root'));
+    const rootIndex = roots.indexOf(root);
+    const storeKey = 'mf-link-label-offsets-v2-' + (rootIndex >= 0 ? rootIndex : 0);
     let offsets = {};
 
     try {
