@@ -351,19 +351,19 @@
 
 .mf-spark-line {
     position: absolute;
-    height: 2px;
     z-index: 2;
-    opacity: 0.92;
-    filter: blur(0.2px);
+    opacity: 0.95;
+    filter: blur(0.1px);
+    border-radius: 999px;
 }
 
 .mf-spark-group-box {
     position: absolute;
-    min-width: 120px;
+    min-width: 118px;
     max-width: 170px;
     padding: 5px 7px;
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.82);
+    background: rgba(0, 0, 0, 0.86);
     border: 1px solid rgba(255,255,255,0.08);
     box-shadow:
         0 0 10px rgba(0,0,0,0.65),
@@ -393,92 +393,6 @@
     margin-top: 2px;
 }
 
-.mf-spark-group-right {
-    left: 72px;
-    top: -34px;
-}
-
-.mf-spark-line-right {
-    left: 16px;
-    top: 0;
-    width: 52px;
-}
-
-.mf-spark-group-up-right {
-    left: 56px;
-    top: -108px;
-}
-
-.mf-spark-line-up-right {
-    left: 8px;
-    top: -34px;
-    width: 62px;
-    transform: rotate(-35deg);
-    transform-origin: left center;
-}
-
-.mf-spark-group-down-right {
-    left: 56px;
-    top: 48px;
-}
-
-.mf-spark-line-down-right {
-    left: 8px;
-    top: 30px;
-    width: 62px;
-    transform: rotate(35deg);
-    transform-origin: left center;
-}
-
-.mf-spark-group-left {
-    left: -182px;
-    top: -34px;
-}
-
-.mf-spark-line-left {
-    left: -68px;
-    top: 0;
-    width: 52px;
-}
-
-.mf-spark-group-up-left {
-    left: -176px;
-    top: -108px;
-}
-
-.mf-spark-line-up-left {
-    left: -56px;
-    top: -34px;
-    width: 62px;
-    transform: rotate(35deg);
-    transform-origin: right center;
-}
-
-.mf-spark-group-down-left {
-    left: -176px;
-    top: 48px;
-}
-
-.mf-spark-line-down-left {
-    left: -56px;
-    top: 30px;
-    width: 62px;
-    transform: rotate(-35deg);
-    transform-origin: right center;
-}
-
-.mf-spark-group-bottom {
-    left: -44px;
-    top: 86px;
-}
-
-.mf-spark-line-bottom {
-    left: -1px;
-    top: 18px;
-    width: 2px;
-    height: 58px;
-}
-
 .mf-spark-port-default {
     color: #cffff0;
     border-color: rgba(115,255,178,0.35);
@@ -490,10 +404,6 @@
 .mf-spark-port-default.mf-spark-line {
     background: linear-gradient(90deg, rgba(115,255,178,0.95), rgba(115,255,178,0.10));
     box-shadow: 0 0 10px rgba(115,255,178,0.75);
-}
-
-.mf-spark-port-default.mf-spark-line-bottom {
-    background: linear-gradient(180deg, rgba(115,255,178,0.95), rgba(115,255,178,0.10));
 }
 
 .mf-spark-port-ssh {
@@ -509,10 +419,6 @@
     box-shadow: 0 0 10px rgba(255,182,94,0.75);
 }
 
-.mf-spark-port-ssh.mf-spark-line-bottom {
-    background: linear-gradient(180deg, rgba(255,182,94,0.95), rgba(255,182,94,0.10));
-}
-
 .mf-spark-port-web {
     color: #a8e7ff;
     border-color: rgba(88,200,255,0.35);
@@ -524,10 +430,6 @@
 .mf-spark-port-web.mf-spark-line {
     background: linear-gradient(90deg, rgba(88,200,255,0.95), rgba(88,200,255,0.10));
     box-shadow: 0 0 10px rgba(88,200,255,0.75);
-}
-
-.mf-spark-port-web.mf-spark-line-bottom {
-    background: linear-gradient(180deg, rgba(88,200,255,0.95), rgba(88,200,255,0.10));
 }
 
 .mf-spark-port-tls {
@@ -543,10 +445,6 @@
     box-shadow: 0 0 10px rgba(102,255,153,0.75);
 }
 
-.mf-spark-port-tls.mf-spark-line-bottom {
-    background: linear-gradient(180deg, rgba(102,255,153,0.95), rgba(102,255,153,0.10));
-}
-
 .mf-spark-port-rdp {
     color: #ebc2ff;
     border-color: rgba(198,114,255,0.35);
@@ -558,10 +456,6 @@
 .mf-spark-port-rdp.mf-spark-line {
     background: linear-gradient(90deg, rgba(198,114,255,0.95), rgba(198,114,255,0.10));
     box-shadow: 0 0 10px rgba(198,114,255,0.75);
-}
-
-.mf-spark-port-rdp.mf-spark-line-bottom {
-    background: linear-gradient(180deg, rgba(198,114,255,0.95), rgba(198,114,255,0.10));
 }
 
 .mf-spark-port-app {
@@ -577,10 +471,6 @@
     box-shadow: 0 0 10px rgba(255,105,180,0.75);
 }
 
-.mf-spark-port-app.mf-spark-line-bottom {
-    background: linear-gradient(180deg, rgba(255,105,180,0.95), rgba(255,105,180,0.10));
-}
-
 .mf-spark-port-game {
     color: #ffb7b7;
     border-color: rgba(255,80,80,0.35);
@@ -592,10 +482,6 @@
 .mf-spark-port-game.mf-spark-line {
     background: linear-gradient(90deg, rgba(255,80,80,0.95), rgba(255,80,80,0.10));
     box-shadow: 0 0 10px rgba(255,80,80,0.75);
-}
-
-.mf-spark-port-game.mf-spark-line-bottom {
-    background: linear-gradient(180deg, rgba(255,80,80,0.95), rgba(255,80,80,0.10));
 }
 
 @keyframes mf-spark-pulse {
@@ -656,6 +542,6 @@
 
     .mf-spark-group-box {
         max-width: 145px;
-        min-width: 110px;
+        min-width: 108px;
     }
 }

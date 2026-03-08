@@ -401,6 +401,7 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['spark'.$i.'_label'] = $this->getField($fields, $inputs, 'spark'.$i.'_label', '');
             $data['spark'.$i.'_host'] = $this->hostIdToName($hostid);
             $data['spark'.$i.'_key'] = $key;
+            $data['spark'.$i.'_group_mode'] = $this->getField($fields, $inputs, 'spark'.$i.'_group_mode', 'port');
             $data['spark'.$i.'_x'] = $this->getField($fields, $inputs, 'spark'.$i.'_x', '50');
             $data['spark'.$i.'_y'] = $this->getField($fields, $inputs, 'spark'.$i.'_y', '50');
             $data['spark'.$i.'_max'] = $this->getField($fields, $inputs, 'spark'.$i.'_max', '12');

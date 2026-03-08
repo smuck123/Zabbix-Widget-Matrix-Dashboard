@@ -115,6 +115,7 @@ window.matrix_firewall_form = new class {
                 showField('spark' + i + '_label', visible);
                 showField('spark' + i + '_host', visible);
                 showField('spark' + i + '_key', visible);
+                showField('spark' + i + '_group_mode', visible);
                 showField('spark' + i + '_x', visible);
                 showField('spark' + i + '_y', visible);
                 showField('spark' + i + '_max', visible);

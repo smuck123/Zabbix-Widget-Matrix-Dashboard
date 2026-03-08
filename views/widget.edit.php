@@ -92,6 +92,7 @@ for ($i = 1; $i <= WidgetForm::MAX_SPARKS; $i++) {
         ->addField(new CWidgetFieldTextBoxView($data['fields']['spark'.$i.'_label']))
         ->addField(new CWidgetFieldSelectView($data['fields']['spark'.$i.'_host']))
         ->addField(new CWidgetFieldTextBoxView($data['fields']['spark'.$i.'_key']))
+        ->addField(new CWidgetFieldSelectView($data['fields']['spark'.$i.'_group_mode']))
         ->addField(new CWidgetFieldIntegerBoxView($data['fields']['spark'.$i.'_x']))
         ->addField(new CWidgetFieldIntegerBoxView($data['fields']['spark'.$i.'_y']))
         ->addField(new CWidgetFieldIntegerBoxView($data['fields']['spark'.$i.'_max']))

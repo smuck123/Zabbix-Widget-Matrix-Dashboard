@@ -592,6 +592,7 @@ for ($i = 1; $i <= $node_count; $i++) {
 for ($i = 1; $i <= $spark_count; $i++) {
     $label = trim((string) ($data['spark'.$i.'_label'] ?? ''));
     $host = trim((string) ($data['spark'.$i.'_host'] ?? ''));
+    $group_mode = $clampInt($data['spark'.$i.'_group_mode'] ?? 0, 0, 2, 0);
     $x = $clampInt($data['spark'.$i.'_x'] ?? 50, 5, 95, 50);
     $y = $clampInt($data['spark'.$i.'_y'] ?? 50, 5, 90, 50);
     $items = $data['spark'.$i.'_items'] ?? [];
@@ -636,56 +637,132 @@ for ($i = 1; $i <= $spark_count; $i++) {
 
         $groups = [];
 
-        foreach ($items as $item) {
-            $meta = $getSparkPortMeta((string) ($item['port'] ?? ''));
+        foreach ($items as $entry) {
+            $process = trim((string) ($entry['process'] ?? ''));
+            $ip = trim((string) ($entry['ip'] ?? ''));
+            $port = trim((string) ($entry['port'] ?? ''));
+            $port_meta = $getSparkPortMeta($port);
 
-            if (!array_key_exists($meta['key'], $groups)) {
-                $groups[$meta['key']] = [
-                    'title' => $meta['title'],
-                    'class' => $meta['class'],
-                    'items' => []
+            if ($group_mode === 1) {
+                $group_key = strtolower($process !== '' ? $process : 'process');
+                $group_title = strtoupper($process !== '' ? $process : 'PROCESS');
+                $group_class = $port_meta['class'];
+            }
+            elseif ($group_mode === 2) {
+                $group_key = strtolower($ip !== '' ? $ip : 'unknown');
+                $group_title = $ip !== '' ? $ip : 'UNKNOWN';
+                $group_class = $port_meta['class'];
+            }
+            else {
+                $group_key = $port_meta['key'];
+                $group_title = $port_meta['title'];
+                $group_class = $port_meta['class'];
+            }
+
+            if (!array_key_exists($group_key, $groups)) {
+                $groups[$group_key] = [
+                    'title' => $group_title,
+                    'class' => $group_class,
+                    'count' => 0,
+                    'rows' => [],
+                    'seen_ip' => []
                 ];
             }
 
-            $groups[$meta['key']]['items'][] = $item;
+            $groups[$group_key]['count']++;
+
+            $ip_key = strtolower($ip);
+            if ($ip_key !== '') {
+                if (!array_key_exists($ip_key, $groups[$group_key]['seen_ip'])) {
+                    if ($group_mode === 1) {
+                        $display = $ip.($port !== '' ? ':'.$port : '');
+                    }
+                    elseif ($group_mode === 2) {
+                        $display = $process !== '' ? $process.($port !== '' ? ':'.$port : '') : ($port !== '' ? ':'.$port : $ip);
+                    }
+                    else {
+                        $display = ($process !== '' ? $process.' ' : '').$ip;
+                    }
+
+                    $groups[$group_key]['seen_ip'][$ip_key] = count($groups[$group_key]['rows']);
+                    $groups[$group_key]['rows'][] = [
+                        'text' => $display,
+                        'count' => 1
+                    ];
+                }
+                else {
+                    $row_index = $groups[$group_key]['seen_ip'][$ip_key];
+                    $groups[$group_key]['rows'][$row_index]['count']++;
+                }
+            }
+            else {
+                $groups[$group_key]['rows'][] = [
+                    'text' => trim(($process !== '' ? $process : 'entry').($port !== '' ? ':'.$port : '')),
+                    'count' => 1
+                ];
+            }
         }
 
-        $positions = [
-            'tls'   => ['class' => 'mf-spark-group-right',      'line' => 'mf-spark-line-right'],
-            'web'   => ['class' => 'mf-spark-group-up-right',   'line' => 'mf-spark-line-up-right'],
-            'ssh'   => ['class' => 'mf-spark-group-down-right', 'line' => 'mf-spark-line-down-right'],
-            'rdp'   => ['class' => 'mf-spark-group-left',       'line' => 'mf-spark-line-left'],
-            'app'   => ['class' => 'mf-spark-group-up-left',    'line' => 'mf-spark-line-up-left'],
-            'game'  => ['class' => 'mf-spark-group-down-left',  'line' => 'mf-spark-line-down-left'],
-            'other' => ['class' => 'mf-spark-group-bottom',     'line' => 'mf-spark-line-bottom']
+        $slot_positions = [
+            ['box_left' => 82,   'box_top' => -22,  'line_left' => 18,  'line_top' => 1,   'line_width' => 58, 'line_height' => 2,  'transform' => 'none'],
+            ['box_left' => 58,   'box_top' => -118, 'line_left' => 9,   'line_top' => -30, 'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'left center'],
+            ['box_left' => 58,   'box_top' => 62,   'line_left' => 9,   'line_top' => 31,  'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'left center'],
+            ['box_left' => -188, 'box_top' => -22,  'line_left' => -72, 'line_top' => 1,   'line_width' => 58, 'line_height' => 2,  'transform' => 'none'],
+            ['box_left' => -182, 'box_top' => -118, 'line_left' => -54, 'line_top' => -30, 'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'right center'],
+            ['box_left' => -182, 'box_top' => 62,   'line_left' => -54, 'line_top' => 31,  'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'right center'],
+            ['box_left' => -46,  'box_top' => -146, 'line_left' => -1,  'line_top' => -82, 'line_width' => 2,  'line_height' => 60, 'transform' => 'none'],
+            ['box_left' => -46,  'box_top' => 98,   'line_left' => -1,  'line_top' => 20,  'line_width' => 2,  'line_height' => 60, 'transform' => 'none']
         ];
 
-        foreach ($groups as $group_key => $group) {
-            $pos = $positions[$group_key] ?? $positions['other'];
+        $slot_index = 0;
 
-            $line = (new CDiv())->addClass('mf-spark-line '.$pos['line'].' '.$group['class']);
+        foreach ($groups as $group) {
+            if ($slot_index >= count($slot_positions)) {
+                break;
+            }
+
+            $slot = $slot_positions[$slot_index];
+            $slot_index++;
+
+            $line_style = 'left: '.$slot['line_left'].'px; top: '.$slot['line_top'].'px; width: '.$slot['line_width'].'px; height: '.$slot['line_height'].'px;';
+            if (!empty($slot['transform']) && $slot['transform'] !== 'none') {
+                $line_style .= ' transform: '.$slot['transform'].';';
+            }
+            if (!empty($slot['origin'])) {
+                $line_style .= ' transform-origin: '.$slot['origin'].';';
+            }
+
+            $line = (new CDiv())->addClass('mf-spark-line '.$group['class']);
+            $line->setAttribute('style', $line_style);
             $spark->addItem($line);
 
-            $box = (new CDiv())->addClass('mf-spark-group-box '.$pos['class'].' '.$group['class']);
+            $box = (new CDiv())->addClass('mf-spark-group-box '.$group['class']);
+            $box->setAttribute('style', 'left: '.$slot['box_left'].'px; top: '.$slot['box_top'].'px;');
+
             $box->addItem(
-                (new CDiv($group['title'].' '.count($group['items'])))
+                (new CDiv($group['title'].' '.$group['count']))
                     ->addClass('mf-spark-group-title')
             );
 
             $shown = 0;
-            foreach ($group['items'] as $entry) {
+            foreach ($group['rows'] as $row) {
                 $shown++;
 
                 if ($shown > 6) {
-                    $remaining = count($group['items']) - 6;
+                    $remaining = count($group['rows']) - 6;
                     if ($remaining > 0) {
                         $box->addItem((new CDiv('+'.$remaining.' more'))->addClass('mf-spark-more'));
                     }
                     break;
                 }
 
+                $text = $row['text'];
+                if ($row['count'] > 1) {
+                    $text .= ' x'.$row['count'];
+                }
+
                 $box->addItem(
-                    (new CDiv($shortText($entry['label'] ?? '', 34)))
+                    (new CDiv($shortText($text, 34)))
                         ->addClass('mf-spark-group-item')
                 );
             }

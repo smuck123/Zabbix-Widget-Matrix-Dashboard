@@ -45,6 +45,10 @@ class WidgetForm extends CWidgetForm {
     public const MATRIX_SPEED_FAST = 2;
     public const MATRIX_SPEED_VERY_FAST = 3;
 
+    public const SPARK_GROUP_PORT = 0;
+    public const SPARK_GROUP_PROCESS = 1;
+    public const SPARK_GROUP_IP = 2;
+
     private function getNumberOptions(int $min, int $max): array {
         $options = [];
 
@@ -146,6 +150,14 @@ class WidgetForm extends CWidgetForm {
         ];
     }
 
+    private function getSparkGroupingOptions(): array {
+        return [
+            self::SPARK_GROUP_PORT => 'Group by port',
+            self::SPARK_GROUP_PROCESS => 'Group by process',
+            self::SPARK_GROUP_IP => 'Group by remote IP'
+        ];
+    }
+
     public function addFields(): self {
         $host_options = $this->getHostOptions();
         $node_options = $this->getNodeOptions();
@@ -154,6 +166,7 @@ class WidgetForm extends CWidgetForm {
         $yesno = $this->getYesNoOptions();
         $node_types = $this->getNodeTypeOptions();
         $matrix_speeds = $this->getMatrixSpeedOptions();
+        $spark_grouping = $this->getSparkGroupingOptions();
 
         $this
             ->addField((new CWidgetFieldSelect('layout_mode', 'Layout mode', $this->getLayoutOptions()))->setDefault(self::LAYOUT_AUTO))
@@ -226,6 +239,7 @@ class WidgetForm extends CWidgetForm {
                 ->addField((new CWidgetFieldTextBox('spark'.$i.'_label', 'Spark '.$i.' label'))->setDefault(''))
                 ->addField((new CWidgetFieldSelect('spark'.$i.'_host', 'Spark '.$i.' host', $host_options))->setDefault(0))
                 ->addField((new CWidgetFieldTextBox('spark'.$i.'_key', 'Spark '.$i.' JSON item key'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('spark'.$i.'_group_mode', 'Spark '.$i.' grouping', $spark_grouping))->setDefault(self::SPARK_GROUP_PORT))
                 ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_x', 'Spark '.$i.' X %'))->setDefault(50))
                 ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_y', 'Spark '.$i.' Y %'))->setDefault(50))
                 ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_max', 'Spark '.$i.' max links'))->setDefault(12))
