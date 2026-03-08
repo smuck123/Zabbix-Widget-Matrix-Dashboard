@@ -108,6 +108,23 @@ class WidgetView extends CControllerDashboardWidgetView {
         return ['raw' => (float) $bps, 'text' => (string) $bps];
     }
 
+    private function getRandomMatrixText(string $prefix = ''): string {
+        $words = [
+            'MATRIXRAIN', 'LINKFLOW', 'NEONTRACE', 'PACKETSTORM', 'PORTSCAN',
+            'FIREWALL', 'AZUREEDGE', 'CPU', 'MEM', 'EXPRESSROUTE', 'LATENCY',
+            'SESSIONS', 'ERRORS', 'NOCVIEW', 'FORTIGATE', 'TRAFFIC'
+        ];
+
+        shuffle($words);
+        $value = $words[0].' '.rand(1, 9999);
+
+        if ($prefix !== '') {
+            return $prefix.' '.$value;
+        }
+
+        return $value;
+    }
+
     private function getLatestRawByHostId(string $hostid, string $key, bool $allow_random = false): array {
         $result = [
             'raw' => 0.0,
@@ -185,6 +202,53 @@ class WidgetView extends CControllerDashboardWidgetView {
         return ['text' => $raw, 'class' => 'neutral'];
     }
 
+    private function parseSparkJson(string $json, int $max = 12): array {
+        $result = [
+            'count' => 0,
+            'items' => [],
+            'error' => ''
+        ];
+
+        if ($json === '') {
+            $result['error'] = 'No data';
+            return $result;
+        }
+
+        $decoded = json_decode($json, true);
+
+        if (!is_array($decoded)) {
+            $result['error'] = 'Invalid JSON';
+            return $result;
+        }
+
+        if (empty($decoded['data']) || !is_array($decoded['data'])) {
+            $result['error'] = 'No data array';
+            return $result;
+        }
+
+        $items = array_slice($decoded['data'], 0, max(1, $max));
+
+        foreach ($items as $item) {
+            $process = trim((string) ($item['process'] ?? 'proc'));
+            $ip = trim((string) ($item['r_ip'] ?? 'unknown'));
+            $port = trim((string) ($item['r_port'] ?? ''));
+            $label = $process.' '.$ip;
+            if ($port !== '') {
+                $label .= ':'.$port;
+            }
+
+            $result['items'][] = [
+                'process' => $process,
+                'ip' => $ip,
+                'port' => $port,
+                'label' => $label
+            ];
+        }
+
+        $result['count'] = count($result['items']);
+        return $result;
+    }
+
     protected function doAction(): void {
         $fields = $this->getInput('fields', []);
         $inputs = $this->getInputAll();
@@ -201,7 +265,8 @@ class WidgetView extends CControllerDashboardWidgetView {
             'link_count' => $this->getField($fields, $inputs, 'link_count', '3'),
             'extra_count' => $this->getField($fields, $inputs, 'extra_count', '0'),
             'status_count' => $this->getField($fields, $inputs, 'status_count', '0'),
-            'matrix_value_count' => $this->getField($fields, $inputs, 'matrix_value_count', '8')
+            'matrix_value_count' => $this->getField($fields, $inputs, 'matrix_value_count', '8'),
+            'spark_count' => $this->getField($fields, $inputs, 'spark_count', '0')
         ];
 
         for ($i = 1; $i <= WidgetForm::MAX_NODES; $i++) {
@@ -301,14 +366,39 @@ class WidgetView extends CControllerDashboardWidgetView {
 
         for ($i = 1; $i <= WidgetForm::MAX_MATRIX_VALUES; $i++) {
             $hostid = $this->getField($fields, $inputs, 'matrix'.$i.'_host', '0');
+            $random_enabled = $this->getField($fields, $inputs, 'matrix'.$i.'_random', '0');
 
             $data['matrix'.$i.'_label'] = $this->getField($fields, $inputs, 'matrix'.$i.'_label', '');
             $data['matrix'.$i.'_host'] = $this->hostIdToName($hostid);
             $data['matrix'.$i.'_key'] = $this->getField($fields, $inputs, 'matrix'.$i.'_key', '');
             $data['matrix'.$i.'_static'] = $this->getField($fields, $inputs, 'matrix'.$i.'_static', '');
+            $data['matrix'.$i.'_random'] = $random_enabled;
 
             $matrix_value = $this->getLatestRawByHostId($hostid, $data['matrix'.$i.'_key'], $allow_random);
-            $data['matrix'.$i.'_value'] = $this->formatGeneric($matrix_value['text']);
+            $value = $this->formatGeneric($matrix_value['text']);
+
+            if ($value === '' && $random_enabled === '1') {
+                $value = $this->getRandomMatrixText($data['matrix'.$i.'_label']);
+            }
+
+            $data['matrix'.$i.'_value'] = $value;
+        }
+
+        for ($i = 1; $i <= WidgetForm::MAX_SPARKS; $i++) {
+            $hostid = $this->getField($fields, $inputs, 'spark'.$i.'_host', '0');
+            $key = $this->getField($fields, $inputs, 'spark'.$i.'_key', '');
+            $spark_value = $this->getLatestRawByHostId($hostid, $key, false);
+            $spark_json = $this->parseSparkJson($spark_value['text'], (int) $this->getField($fields, $inputs, 'spark'.$i.'_max', '12'));
+
+            $data['spark'.$i.'_label'] = $this->getField($fields, $inputs, 'spark'.$i.'_label', '');
+            $data['spark'.$i.'_host'] = $this->hostIdToName($hostid);
+            $data['spark'.$i.'_key'] = $key;
+            $data['spark'.$i.'_x'] = $this->getField($fields, $inputs, 'spark'.$i.'_x', '50');
+            $data['spark'.$i.'_y'] = $this->getField($fields, $inputs, 'spark'.$i.'_y', '50');
+            $data['spark'.$i.'_max'] = $this->getField($fields, $inputs, 'spark'.$i.'_max', '12');
+            $data['spark'.$i.'_count'] = (string) $spark_json['count'];
+            $data['spark'.$i.'_error'] = $spark_json['error'];
+            $data['spark'.$i.'_items'] = $spark_json['items'];
         }
 
         $this->setResponse(new CControllerResponseData($data));

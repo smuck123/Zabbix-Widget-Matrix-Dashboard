@@ -12,6 +12,7 @@ $max_links = 30;
 $max_extras = 10;
 $max_status = 10;
 $max_matrix_values = 20;
+$max_sparks = 6;
 
 $clampInt = static function($value, int $min, int $max, int $default): int {
     if ($value === '' || !is_numeric($value)) {
@@ -37,37 +38,39 @@ $shortText = static function(string $value, int $limit = 28): string {
     return $value;
 };
 
-$getNodeIcon = static function(int $type): string {
+$getNodeTypeMeta = static function(int $type): array {
     switch ($type) {
         case WidgetForm::NODE_TYPE_FIREWALL:
-            return '🛡';
+            return ['text' => 'FW', 'class' => 'mf-node-type-firewall'];
         case WidgetForm::NODE_TYPE_CLOUD:
-            return '☁';
+            return ['text' => 'CLD', 'class' => 'mf-node-type-cloud'];
         case WidgetForm::NODE_TYPE_SERVER:
-            return '🖥';
+            return ['text' => 'SRV', 'class' => 'mf-node-type-server'];
         case WidgetForm::NODE_TYPE_OFFICE:
-            return '🏢';
+            return ['text' => 'OFC', 'class' => 'mf-node-type-office'];
         case WidgetForm::NODE_TYPE_EXPRESSROUTE:
-            return '⇄';
+            return ['text' => 'XR', 'class' => 'mf-node-type-expressroute'];
         case WidgetForm::NODE_TYPE_INTERNET:
-            return '🌐';
+            return ['text' => 'NET', 'class' => 'mf-node-type-internet'];
         case WidgetForm::NODE_TYPE_DATACENTER:
-            return '🏬';
+            return ['text' => 'DC', 'class' => 'mf-node-type-datacenter'];
         case WidgetForm::NODE_TYPE_DATABASE:
-            return '🛢';
+            return ['text' => 'DB', 'class' => 'mf-node-type-database'];
         default:
-            return '⬢';
+            return ['text' => 'GEN', 'class' => 'mf-node-type-generic'];
     }
 };
 
 $getMatrixDurations = static function(int $speed): array {
     switch ($speed) {
         case WidgetForm::MATRIX_SPEED_SLOW:
-            return [18, 14, 16, 20, 15, 19, 17, 21];
+            return [18, 14, 16, 20, 15, 19, 17, 21, 16, 22];
         case WidgetForm::MATRIX_SPEED_FAST:
-            return [8, 6, 7, 9, 7, 10, 8, 11];
+            return [8, 6, 7, 9, 7, 10, 8, 11, 6, 9];
+        case WidgetForm::MATRIX_SPEED_VERY_FAST:
+            return [4, 3, 5, 4, 3, 5, 4, 6, 3, 4];
         default:
-            return [12, 8, 10, 14, 9, 13, 11, 15];
+            return [12, 8, 10, 14, 9, 13, 11, 15, 10, 12];
     }
 };
 
@@ -161,8 +164,9 @@ $link_count = $clampInt($data['link_count'] ?? 3, 0, $max_links, 3);
 $extra_count = $clampInt($data['extra_count'] ?? 0, 0, $max_extras, 0);
 $status_count = $clampInt($data['status_count'] ?? 0, 0, $max_status, 0);
 $layout_mode = $clampInt($data['layout_mode'] ?? 0, 0, 1, 0);
-$matrix_speed = $clampInt($data['matrix_speed'] ?? 1, 0, 2, 1);
+$matrix_speed = $clampInt($data['matrix_speed'] ?? 1, 0, 3, 1);
 $matrix_value_count = $clampInt($data['matrix_value_count'] ?? 8, 0, $max_matrix_values, 8);
+$spark_count = $clampInt($data['spark_count'] ?? 0, 0, $max_sparks, 0);
 
 $nodes = [];
 
@@ -245,7 +249,7 @@ for ($i = 1; $i <= $matrix_value_count; $i++) {
     $static = trim((string) ($data['matrix'.$i.'_static'] ?? ''));
 
     $text = '';
-    if ($prefix !== '' && $value !== '') {
+    if ($value !== '' && $prefix !== '') {
         $text = $prefix.' '.$value;
     }
     elseif ($value !== '') {
@@ -265,14 +269,14 @@ for ($i = 1; $i <= $matrix_value_count; $i++) {
 
 if (!$matrix_values) {
     $matrix_values = [
-        'NODEMATRIX',
-        'NETWORKFLOW',
+        'MATRIXRAIN',
+        'ZABBIXNETWORKFLOW',
         'FORTIGATEMONITOR',
         'INOUTTRAFFIC',
         'LATENCYHEALTH',
         'LINKSTATUS',
         'PACKETSERRORS',
-        'MATRIXRAIN'
+        'NEONTRACE'
     ];
 }
 
@@ -508,7 +512,8 @@ $canvas = (new CDiv())->addClass('mf-canvas');
 
 $matrix_bg = (new CDiv())->addClass('mf-matrix-bg');
 for ($i = 0; $i < count($matrix_values); $i++) {
-    $column = (new CDiv($matrix_values[$i]))->addClass('mf-column');
+    $text = $matrix_values[$i].' '.$matrix_values[$i].' '.$matrix_values[$i];
+    $column = (new CDiv($text))->addClass('mf-column');
     $column->setAttribute('style', 'animation-duration: '.$durations[$i % count($durations)].'s;');
     $matrix_bg->addItem($column);
 }
@@ -519,12 +524,17 @@ $canvas
     ->addItem($link_labels_layer);
 
 for ($i = 1; $i <= $node_count; $i++) {
+    $type_meta = $getNodeTypeMeta($nodes[$i]['type']);
+
     $node = (new CDiv())
         ->addClass('mf-node'.($nodes[$i]['has_error'] ? ' mf-node-error' : ''))
         ->setAttribute('style', 'left: '.$nodes[$i]['x'].'%; top: '.$nodes[$i]['y'].'%;');
 
     $head = (new CDiv())->addClass('mf-node-head');
-    $head->addItem((new CDiv($getNodeIcon($nodes[$i]['type'])))->addClass('mf-node-icon'));
+    $head->addItem(
+        (new CDiv($type_meta['text']))
+            ->addClass('mf-node-icon '.$type_meta['class'])
+    );
     $head->addItem((new CDiv($nodes[$i]['label'] !== '' ? $nodes[$i]['label'] : 'Node '.$i))->addClass('mf-node-title'));
     $node->addItem($head);
 
@@ -538,6 +548,60 @@ for ($i = 1; $i <= $node_count; $i++) {
     if ($nodes[$i]['cpu'] !== '' || $nodes[$i]['mem'] !== '') $node->addItem($metrics);
 
     $canvas->addItem($node);
+}
+
+for ($i = 1; $i <= $spark_count; $i++) {
+    $label = trim((string) ($data['spark'.$i.'_label'] ?? ''));
+    $host = trim((string) ($data['spark'.$i.'_host'] ?? ''));
+    $x = $clampInt($data['spark'.$i.'_x'] ?? 50, 5, 95, 50);
+    $y = $clampInt($data['spark'.$i.'_y'] ?? 50, 5, 90, 50);
+    $items = $data['spark'.$i.'_items'] ?? [];
+    $count = $clampInt($data['spark'.$i.'_count'] ?? 0, 0, 100, 0);
+    $error = trim((string) ($data['spark'.$i.'_error'] ?? ''));
+
+    if ($label === '' && $host === '' && !$items && $error === '') {
+        continue;
+    }
+
+    $spark = (new CDiv())->addClass('mf-spark');
+    $spark->setAttribute('style', 'left: '.$x.'%; top: '.$y.'%;');
+
+    $spark->addItem((new CDiv(''))->addClass('mf-spark-core'));
+    $spark->addItem((new CDiv($label !== '' ? $label : 'Spark '.$i))->addClass('mf-spark-title'));
+
+    if ($host !== '') {
+        $spark->addItem((new CDiv($shortText($host, 24)))->addClass('mf-spark-host'));
+    }
+
+    if ($error !== '') {
+        $spark->addItem((new CDiv($error))->addClass('mf-spark-error'));
+    }
+    else {
+        $spark->addItem((new CDiv('Flows '.$count))->addClass('mf-spark-count'));
+
+        $spark_ring = (new CDiv())->addClass('mf-spark-ring');
+
+        $total = count($items);
+        foreach ($items as $idx => $item) {
+            $angle = ($total > 0) ? ((360 / $total) * $idx) : 0;
+            $radius = 78 + (($idx % 3) * 18);
+
+            $entry = (new CDiv())->addClass('mf-spark-entry');
+            $entry->setAttribute(
+                'style',
+                'transform: rotate('.$angle.'deg) translate('.$radius.'px) rotate(-'.$angle.'deg);'
+            );
+
+            $entry->addItem((new CDiv(''))->addClass('mf-spark-bolt'));
+            $entry->addItem((new CDiv($shortText($item['label'] ?? '', 30)))->addClass('mf-spark-label'));
+
+            $spark_ring->addItem($entry);
+        }
+
+        $spark->addItem($spark_ring);
+    }
+
+    $canvas->addItem($spark);
 }
 
 $extras = (new CDiv())->addClass('mf-extra-panel');

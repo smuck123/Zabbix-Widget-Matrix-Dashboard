@@ -14,6 +14,7 @@ class WidgetForm extends CWidgetForm {
     public const MAX_EXTRAS = 10;
     public const MAX_STATUS = 10;
     public const MAX_MATRIX_VALUES = 20;
+    public const MAX_SPARKS = 6;
 
     public const LAYOUT_AUTO = 0;
     public const LAYOUT_MANUAL = 1;
@@ -42,6 +43,7 @@ class WidgetForm extends CWidgetForm {
     public const MATRIX_SPEED_SLOW = 0;
     public const MATRIX_SPEED_NORMAL = 1;
     public const MATRIX_SPEED_FAST = 2;
+    public const MATRIX_SPEED_VERY_FAST = 3;
 
     private function getNumberOptions(int $min, int $max): array {
         $options = [];
@@ -139,7 +141,8 @@ class WidgetForm extends CWidgetForm {
         return [
             self::MATRIX_SPEED_SLOW => 'Slow',
             self::MATRIX_SPEED_NORMAL => 'Normal',
-            self::MATRIX_SPEED_FAST => 'Fast'
+            self::MATRIX_SPEED_FAST => 'Fast',
+            self::MATRIX_SPEED_VERY_FAST => 'Very fast'
         ];
     }
 
@@ -160,7 +163,8 @@ class WidgetForm extends CWidgetForm {
             ->addField((new CWidgetFieldSelect('link_count', 'How many links to show', $this->getNumberOptions(0, self::MAX_LINKS)))->setDefault(1))
             ->addField((new CWidgetFieldSelect('extra_count', 'Extra items to show', $this->getNumberOptions(0, self::MAX_EXTRAS)))->setDefault(0))
             ->addField((new CWidgetFieldSelect('status_count', 'Status items to show', $this->getNumberOptions(0, self::MAX_STATUS)))->setDefault(0))
-            ->addField((new CWidgetFieldSelect('matrix_value_count', 'Matrix background values', $this->getNumberOptions(0, self::MAX_MATRIX_VALUES)))->setDefault(8));
+            ->addField((new CWidgetFieldSelect('matrix_value_count', 'Matrix background values', $this->getNumberOptions(0, self::MAX_MATRIX_VALUES)))->setDefault(8))
+            ->addField((new CWidgetFieldSelect('spark_count', 'Spark zones', $this->getNumberOptions(0, self::MAX_SPARKS)))->setDefault(0));
 
         for ($i = 1; $i <= self::MAX_NODES; $i++) {
             $this
@@ -213,7 +217,18 @@ class WidgetForm extends CWidgetForm {
                 ->addField((new CWidgetFieldTextBox('matrix'.$i.'_label', 'Matrix '.$i.' prefix text'))->setDefault(''))
                 ->addField((new CWidgetFieldSelect('matrix'.$i.'_host', 'Matrix '.$i.' host', $host_options))->setDefault(0))
                 ->addField((new CWidgetFieldTextBox('matrix'.$i.'_key', 'Matrix '.$i.' item key'))->setDefault(''))
-                ->addField((new CWidgetFieldTextBox('matrix'.$i.'_static', 'Matrix '.$i.' static text'))->setDefault(''));
+                ->addField((new CWidgetFieldTextBox('matrix'.$i.'_static', 'Matrix '.$i.' static text'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('matrix'.$i.'_random', 'Matrix '.$i.' random text', $yesno))->setDefault(0));
+        }
+
+        for ($i = 1; $i <= self::MAX_SPARKS; $i++) {
+            $this
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_label', 'Spark '.$i.' label'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('spark'.$i.'_host', 'Spark '.$i.' host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_key', 'Spark '.$i.' JSON item key'))->setDefault(''))
+                ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_x', 'Spark '.$i.' X %'))->setDefault(50))
+                ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_y', 'Spark '.$i.' Y %'))->setDefault(50))
+                ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_max', 'Spark '.$i.' max links'))->setDefault(12));
         }
 
         return $this;
