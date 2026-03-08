@@ -59,6 +59,7 @@ window.matrix_firewall_form = new class {
                 const visible = i <= nodeCount;
                 showField('node' + i + '_label', visible);
                 showField('node' + i + '_type', visible);
+                showField('node' + i + '_theme', visible);
                 showField('node' + i + '_host', visible);
                 showField('node' + i + '_x', visible && layoutMode === 1);
                 showField('node' + i + '_y', visible && layoutMode === 1);
