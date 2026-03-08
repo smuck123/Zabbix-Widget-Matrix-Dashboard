@@ -1,0 +1,29 @@
+{
+    "manifest_version": 2.0,
+    "id": "matrix_firewall",
+    "type": "widget",
+    "name": "Matrix Firewall",
+    "namespace": "MatrixFirewall",
+    "version": "1.0",
+    "author": "Janne Kivelä",
+    "description": "Matrix like Dashboard widget for Zabbix 7.4.",
+    "widget": {
+        "name": "Matrix Firewall",
+        "size": {
+            "width": 24,
+            "height": 14
+        },
+        "refresh_rate": 60,
+        "form_class": "WidgetForm"
+    },
+    "actions": {
+        "widget.matrix_firewall.view": {
+            "class": "WidgetView"
+        }
+    },
+    "assets": {
+        "css": [
+            "widget.css"
+        ]
+    }
+}
