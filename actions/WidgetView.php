@@ -96,6 +96,11 @@ class WidgetView extends CControllerDashboardWidgetView {
             return $build_result($val);
         }
 
+        if (stripos($key, 'disk') !== false) {
+            $val = 15 + ($seed % 80);
+            return $build_result($val);
+        }
+
         if (stripos($key, 'lat') !== false) {
             $val = 2 + ($seed % 120);
             return $build_result($val);
@@ -349,18 +354,22 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['node'.$i.'_cpu_key'] = $this->getField($fields, $inputs, 'node'.$i.'_cpu_key', '');
             $data['node'.$i.'_mem_key'] = $this->getField($fields, $inputs, 'node'.$i.'_mem_key', '');
+            $data['node'.$i.'_disk_key'] = $this->getField($fields, $inputs, 'node'.$i.'_disk_key', '');
 
             $cpu = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_cpu_key'], $allow_random);
             $mem = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_mem_key'], $allow_random);
+            $disk = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_disk_key'], $allow_random);
 
             $data['node'.$i.'_cpu_value'] = $this->formatGeneric($cpu['text']);
             $data['node'.$i.'_mem_value'] = $this->formatGeneric($mem['text']);
+            $data['node'.$i.'_disk_value'] = $this->formatGeneric($disk['text']);
             $data['node'.$i.'_cpu_itemid'] = $cpu['itemid'];
             $data['node'.$i.'_mem_itemid'] = $mem['itemid'];
+            $data['node'.$i.'_disk_itemid'] = $disk['itemid'];
             $problem_count = $this->getHostProblemCount($node_hostid);
 
             $data['node'.$i.'_problem_count'] = (string) $problem_count;
-            $data['node'.$i.'_has_error'] = ($cpu['has_error'] || $mem['has_error'] || $problem_count > 0) ? '1' : '0';
+            $data['node'.$i.'_has_error'] = ($cpu['has_error'] || $mem['has_error'] || $disk['has_error'] || $problem_count > 0) ? '1' : '0';
         }
 
         for ($i = 1; $i <= WidgetForm::MAX_LINKS; $i++) {

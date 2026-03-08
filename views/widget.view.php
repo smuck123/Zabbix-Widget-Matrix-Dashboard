@@ -43,10 +43,27 @@ $shortText = static function(string $value, int $limit = 28): string {
 };
 
 $normalizeId = static function($value): string {
+
     $id = trim((string) $value);
     return ($id !== '' && $id !== '0') ? $id : '';
 };
 
+
+$parsePercent = static function(string $value): int {
+    if (preg_match('/-?\d+(?:\.\d+)?/', $value, $m) !== 1) {
+        return 0;
+    }
+
+    $num = (int) round((float) $m[0]);
+    if ($num < 0) {
+        return 0;
+    }
+    if ($num > 100) {
+        return 100;
+    }
+
+    return $num;
+};
 $getDrilldownUrl = static function(string $hostid, string $itemid = '', int $mode = WidgetForm::LINK_DRILLDOWN_AUTO): string {
     if ($mode === WidgetForm::LINK_DRILLDOWN_PROBLEMS) {
         if ($hostid !== '' && $hostid !== '0') {
@@ -252,13 +269,15 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
-            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_OUTLINE, WidgetForm::NODE_THEME_BOX),
+            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_EXTRA_PANEL, WidgetForm::NODE_THEME_BOX),
             'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'disk' => trim((string) ($data['node'.$i.'_disk_value'] ?? '')),
             'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
             'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
+            'disk_itemid' => $normalizeId($data['node'.$i.'_disk_itemid'] ?? ''),
             'problem_count' => $clampInt($data['node'.$i.'_problem_count'] ?? 0, 0, 9999, 0),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => $clampInt($data['node'.$i.'_x'] ?? 10, 2, 90, 10),
@@ -305,13 +324,15 @@ else {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
-            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_OUTLINE, WidgetForm::NODE_THEME_BOX),
+            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_EXTRA_PANEL, WidgetForm::NODE_THEME_BOX),
             'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
             'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'disk' => trim((string) ($data['node'.$i.'_disk_value'] ?? '')),
             'cpu_itemid' => $normalizeId($data['node'.$i.'_cpu_itemid'] ?? ''),
             'mem_itemid' => $normalizeId($data['node'.$i.'_mem_itemid'] ?? ''),
+            'disk_itemid' => $normalizeId($data['node'.$i.'_disk_itemid'] ?? ''),
             'problem_count' => $clampInt($data['node'.$i.'_problem_count'] ?? 0, 0, 9999, 0),
             'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
             'x' => min(86, max(5, $x)),
@@ -722,10 +743,45 @@ for ($i = 1; $i <= $node_count; $i++) {
         $node->addItem((new CDiv($nodes[$i]['problem_count'].' problem'.($nodes[$i]['problem_count'] === 1 ? '' : 's')))->addClass('mf-node-problems'));
     }
 
-    $metrics = (new CDiv())->addClass('mf-node-metrics');
-    if ($nodes[$i]['cpu'] !== '') $metrics->addItem((new CDiv('CPU '.$nodes[$i]['cpu']))->addClass('mf-node-metric-chip'));
-    if ($nodes[$i]['mem'] !== '') $metrics->addItem((new CDiv('MEM '.$nodes[$i]['mem']))->addClass('mf-node-metric-chip'));
-    if ($nodes[$i]['cpu'] !== '' || $nodes[$i]['mem'] !== '') $node->addItem($metrics);
+    if (in_array($nodes[$i]['theme'], [WidgetForm::NODE_THEME_STATUS_PANEL, WidgetForm::NODE_THEME_EXTRA_PANEL], true)) {
+        $panel = (new CDiv())->addClass('mf-node-panel-data');
+
+        $cpu_pct = $parsePercent($nodes[$i]['cpu']);
+        $mem_pct = $parsePercent($nodes[$i]['mem']);
+        $disk_pct = $parsePercent($nodes[$i]['disk']);
+
+        $rows = [
+            ['label' => 'CPU', 'value' => $nodes[$i]['cpu'], 'pct' => $cpu_pct],
+            ['label' => 'Memory', 'value' => $nodes[$i]['mem'], 'pct' => $mem_pct],
+            ['label' => 'Disk', 'value' => $nodes[$i]['disk'], 'pct' => $disk_pct]
+        ];
+
+        foreach ($rows as $row) {
+            if ($row['value'] === '') {
+                continue;
+            }
+
+            $line = (new CDiv())->addClass('mf-node-panel-line');
+            $line->addItem((new CTag('span', true, $row['label'].':'))->addClass('mf-node-panel-label'));
+            $bar = (new CDiv())->addClass('mf-node-panel-bar');
+            $fill = (new CDiv())->addClass('mf-node-panel-fill')->setAttribute('style', 'width: '.$row['pct'].'%;');
+            $bar->addItem($fill);
+            $line->addItem($bar);
+            $line->addItem((new CTag('span', true, $row['value']))->addClass('mf-node-panel-value'));
+            $panel->addItem($line);
+        }
+
+        $status_text = ($nodes[$i]['problem_count'] > 0 || $nodes[$i]['has_error']) ? '🔴 Issues' : '🟢 Online';
+        $panel->addItem((new CDiv('Status: '.$status_text))->addClass('mf-node-panel-status'));
+        $node->addItem($panel);
+    }
+    else {
+        $metrics = (new CDiv())->addClass('mf-node-metrics');
+        if ($nodes[$i]['cpu'] !== '') $metrics->addItem((new CDiv('CPU '.$nodes[$i]['cpu']))->addClass('mf-node-metric-chip'));
+        if ($nodes[$i]['mem'] !== '') $metrics->addItem((new CDiv('MEM '.$nodes[$i]['mem']))->addClass('mf-node-metric-chip'));
+        if ($nodes[$i]['disk'] !== '') $metrics->addItem((new CDiv('DISK '.$nodes[$i]['disk']))->addClass('mf-node-metric-chip'));
+        if ($nodes[$i]['cpu'] !== '' || $nodes[$i]['mem'] !== '' || $nodes[$i]['disk'] !== '') $node->addItem($metrics);
+    }
 
     $canvas->addItem($node);
 }

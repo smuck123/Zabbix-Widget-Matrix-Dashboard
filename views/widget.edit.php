@@ -32,6 +32,7 @@ for ($i = 1; $i <= WidgetForm::MAX_NODES; $i++) {
             ->addField(new CWidgetFieldIntegerBoxView($data['fields']['node'.$i.'_y']))
             ->addField(new CWidgetFieldTextBoxView($data['fields']['node'.$i.'_cpu_key']))
             ->addField(new CWidgetFieldTextBoxView($data['fields']['node'.$i.'_mem_key']))
+            ->addField(new CWidgetFieldTextBoxView($data['fields']['node'.$i.'_disk_key']))
     );
 }
 

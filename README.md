@@ -16,8 +16,8 @@
 - Link styles: elbow, straight, curved, explosive, dots, jumping, file transfer, zigzag.
 - Optional demo/random fallback mode when values are missing.
 - Per-node and per-link item key mapping to pull real Zabbix values.
-- Multiple node themes: box, glass, terminal, pill, neon, panel, outline.
-- Edit form panels split into per-node, per-link, per-extra, per-status, per-matrix, and per-spark sections for clearer configuration.
+- Multiple node themes: box, glass, terminal, pill, neon, panel, outline, status panel, extra panel.
+- Edit form panels split into per-node, per-link, per-extra, per-status, per-matrix, and per-spark sections for clearer configuration, with automatic hiding of unused panels based on selected counts.
 
 ## Requirements
 
