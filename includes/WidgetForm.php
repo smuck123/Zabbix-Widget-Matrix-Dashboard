@@ -57,6 +57,8 @@ class WidgetForm extends CWidgetForm {
     public const NODE_THEME_NEON = 4;
     public const NODE_THEME_PANEL = 5;
     public const NODE_THEME_OUTLINE = 6;
+    public const NODE_THEME_STATUS_PANEL = 7;
+    public const NODE_THEME_EXTRA_PANEL = 8;
 
     public const MATRIX_SPEED_SLOW = 0;
     public const MATRIX_SPEED_NORMAL = 1;
@@ -181,7 +183,9 @@ class WidgetForm extends CWidgetForm {
             self::NODE_THEME_PILL => 'Pill',
             self::NODE_THEME_NEON => 'Neon',
             self::NODE_THEME_PANEL => 'Panel',
-            self::NODE_THEME_OUTLINE => 'Outline'
+            self::NODE_THEME_OUTLINE => 'Outline',
+            self::NODE_THEME_STATUS_PANEL => 'Status panel',
+            self::NODE_THEME_EXTRA_PANEL => 'Extra panel'
         ];
     }
 
@@ -234,7 +238,8 @@ class WidgetForm extends CWidgetForm {
                 ->addField((new CWidgetFieldIntegerBox('node'.$i.'_x', 'Node '.$i.' X %'))->setDefault(10))
                 ->addField((new CWidgetFieldIntegerBox('node'.$i.'_y', 'Node '.$i.' Y %'))->setDefault(10))
                 ->addField((new CWidgetFieldTextBox('node'.$i.'_cpu_key', 'Node '.$i.' CPU item key'))->setDefault(''))
-                ->addField((new CWidgetFieldTextBox('node'.$i.'_mem_key', 'Node '.$i.' Memory item key'))->setDefault(''));
+                ->addField((new CWidgetFieldTextBox('node'.$i.'_mem_key', 'Node '.$i.' Memory item key'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('node'.$i.'_disk_key', 'Node '.$i.' Disk item key'))->setDefault(''));
         }
 
         for ($i = 1; $i <= self::MAX_LINKS; $i++) {
