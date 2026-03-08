@@ -81,6 +81,53 @@ $getTrafficStyle = static function(float $traffic): array {
     ];
 };
 
+$getMidPointOnPolyline = static function(array $points): array {
+    $segments = [];
+    $total = 0.0;
+
+    for ($i = 0; $i < count($points) - 1; $i++) {
+        $x1 = $points[$i][0];
+        $y1 = $points[$i][1];
+        $x2 = $points[$i + 1][0];
+        $y2 = $points[$i + 1][1];
+        $len = sqrt(($x2 - $x1) * ($x2 - $x1) + ($y2 - $y1) * ($y2 - $y1));
+
+        $segments[] = [
+            'x1' => $x1,
+            'y1' => $y1,
+            'x2' => $x2,
+            'y2' => $y2,
+            'len' => $len
+        ];
+
+        $total += $len;
+    }
+
+    if ($total <= 0) {
+        return [$points[0][0], $points[0][1]];
+    }
+
+    $half = $total / 2.0;
+    $walk = 0.0;
+
+    foreach ($segments as $seg) {
+        if (($walk + $seg['len']) >= $half) {
+            $remain = $half - $walk;
+            $ratio = ($seg['len'] > 0) ? ($remain / $seg['len']) : 0;
+
+            return [
+                $seg['x1'] + (($seg['x2'] - $seg['x1']) * $ratio),
+                $seg['y1'] + (($seg['y2'] - $seg['y1']) * $ratio)
+            ];
+        }
+
+        $walk += $seg['len'];
+    }
+
+    $last = end($points);
+    return [$last[0], $last[1]];
+};
+
 $node_count = $clampInt($data['node_count'] ?? 5, 1, $max_nodes, 5);
 $link_count = $clampInt($data['link_count'] ?? 3, 0, $max_links, 3);
 $extra_count = $clampInt($data['extra_count'] ?? 0, 0, $max_extras, 0);
@@ -196,11 +243,6 @@ for ($i = 1; $i <= $link_count; $i++) {
     $style = $getTrafficStyle($traffic);
     $has_error = (($data['link'.$i.'_has_error'] ?? '0') === '1');
 
-    /*
-     * Use box edge anchors instead of center.
-     * Node box is about 150px wide / 84px high in CSS.
-     * In SVG coordinates we approximate that footprint.
-     */
     $node_box_w = 72;
     $node_box_h = 46;
 
@@ -212,57 +254,73 @@ for ($i = 1; $i <= $link_count; $i++) {
 
     $dx = $cx2 - $cx1;
     $dy = $cy2 - $cy1;
-    $len = sqrt($dx * $dx + $dy * $dy);
-    if ($len == 0) {
-        $len = 1;
+
+    $start_x = $cx1;
+    $start_y = $cy1;
+    $end_x = $cx2;
+    $end_y = $cy2;
+
+    if (abs($dx) >= abs($dy)) {
+        $start_x += ($dx >= 0) ? $node_box_w : -$node_box_w;
+        $end_x   -= ($dx >= 0) ? $node_box_w : -$node_box_w;
+    }
+    else {
+        $start_y += ($dy >= 0) ? $node_box_h : -$node_box_h;
+        $end_y   -= ($dy >= 0) ? $node_box_h : -$node_box_h;
     }
 
-    $ux = $dx / $len;
-    $uy = $dy / $len;
+    $lane = (($i % 5) - 2) * 18;
 
-    $x1 = $cx1 + ($ux * $node_box_w);
-    $y1 = $cy1 + ($uy * $node_box_h);
+    if (abs($dx) >= abs($dy)) {
+        $mid_x = ($start_x + $end_x) / 2 + $lane;
 
-    $x2 = $cx2 - ($ux * $node_box_w);
-    $y2 = $cy2 - ($uy * $node_box_h);
+        $points = [
+            [$start_x, $start_y],
+            [$mid_x, $start_y],
+            [$mid_x, $end_y],
+            [$end_x, $end_y]
+        ];
+    }
+    else {
+        $mid_y = ($start_y + $end_y) / 2 + $lane;
 
-    $px = -$uy;
-    $py = $ux;
+        $points = [
+            [$start_x, $start_y],
+            [$start_x, $mid_y],
+            [$end_x, $mid_y],
+            [$end_x, $end_y]
+        ];
+    }
 
-    $line_offset = (($i % 5) - 2) * 6;
+    $polyline_points = [];
+    foreach ($points as $p) {
+        $polyline_points[] = round($p[0], 2).','.round($p[1], 2);
+    }
+    $polyline_str = implode(' ', $polyline_points);
 
-    $x1o = $x1 + ($px * $line_offset);
-    $y1o = $y1 + ($py * $line_offset);
-    $x2o = $x2 + ($px * $line_offset);
-    $y2o = $y2 + ($py * $line_offset);
+    [$mx, $my] = $getMidPointOnPolyline($points);
 
-    $mx = ($x1o + $x2o) / 2;
-    $my = ($y1o + $y2o) / 2;
-
-    $label_offset = (($i % 5) - 2) * 18;
-    $mx += $px * $label_offset;
-    $my += $py * $label_offset;
-
-    $glow = new CTag('line', true);
-    $glow->setAttribute('x1', (string) round($x1o, 2));
-    $glow->setAttribute('y1', (string) round($y1o, 2));
-    $glow->setAttribute('x2', (string) round($x2o, 2));
-    $glow->setAttribute('y2', (string) round($y2o, 2));
+    $glow = new CTag('polyline', true);
+    $glow->setAttribute('points', $polyline_str);
+    $glow->setAttribute('fill', 'none');
     $glow->setAttribute('stroke', $style['color']);
     $glow->setAttribute('stroke-width', (string) $style['glow_width']);
     $glow->setAttribute('class', 'mf-svg-glow');
 
-    $line = new CTag('line', true);
-    $line->setAttribute('x1', (string) round($x1o, 2));
-    $line->setAttribute('y1', (string) round($y1o, 2));
-    $line->setAttribute('x2', (string) round($x2o, 2));
-    $line->setAttribute('y2', (string) round($y2o, 2));
+    $line = new CTag('polyline', true);
+    $line->setAttribute('points', $polyline_str);
+    $line->setAttribute('fill', 'none');
     $line->setAttribute('stroke', $style['color']);
     $line->setAttribute('stroke-width', (string) $style['width']);
     $line->setAttribute('class', 'mf-svg-line');
 
     $svg->addItem($glow);
     $svg->addItem($line);
+
+    $motion_path = 'M'.round($points[0][0], 2).','.round($points[0][1], 2);
+    for ($p = 1; $p < count($points); $p++) {
+        $motion_path .= ' L'.round($points[$p][0], 2).','.round($points[$p][1], 2);
+    }
 
     for ($b = 0; $b < $style['balls']; $b++) {
         $ball = new CTag('circle', true);
@@ -274,10 +332,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         $animate->setAttribute('dur', (string) ($style['dur'] + ($b * 0.22)).'s');
         $animate->setAttribute('begin', (string) ($b * 0.18).'s');
         $animate->setAttribute('repeatCount', 'indefinite');
-        $animate->setAttribute(
-            'path',
-            'M'.round($x1o, 2).','.round($y1o, 2).' L'.round($x2o, 2).','.round($y2o, 2)
-        );
+        $animate->setAttribute('path', $motion_path);
 
         $ball->addItem($animate);
         $svg->addItem($ball);
