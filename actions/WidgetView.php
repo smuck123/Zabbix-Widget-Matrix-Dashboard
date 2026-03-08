@@ -129,6 +129,7 @@ class WidgetView extends CControllerDashboardWidgetView {
         $result = [
             'raw' => 0.0,
             'text' => '',
+            'itemid' => '0',
             'is_random' => false,
             'has_error' => false
         ];
@@ -154,6 +155,7 @@ class WidgetView extends CControllerDashboardWidgetView {
         if (isset($items[0]['lastvalue']) && $items[0]['lastvalue'] !== '') {
             $result['raw'] = (float) $items[0]['lastvalue'];
             $result['text'] = (string) $items[0]['lastvalue'];
+            $result['itemid'] = (string) ($items[0]['itemid'] ?? '0');
             return $result;
         }
 
@@ -166,6 +168,7 @@ class WidgetView extends CControllerDashboardWidgetView {
         if (isset($items[0]['lastvalue']) && $items[0]['lastvalue'] !== '') {
             $result['raw'] = (float) $items[0]['lastvalue'];
             $result['text'] = (string) $items[0]['lastvalue'];
+            $result['itemid'] = (string) ($items[0]['itemid'] ?? '0');
             return $result;
         }
 
@@ -287,6 +290,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['node'.$i.'_cpu_value'] = $this->formatGeneric($cpu['text']);
             $data['node'.$i.'_mem_value'] = $this->formatGeneric($mem['text']);
+            $data['node'.$i.'_cpu_itemid'] = $cpu['itemid'];
+            $data['node'.$i.'_mem_itemid'] = $mem['itemid'];
             $data['node'.$i.'_has_error'] = ($cpu['has_error'] || $mem['has_error']) ? '1' : '0';
         }
 
@@ -304,6 +309,9 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['link'.$i.'_in_host'] = $this->hostIdToName($in_hostid);
             $data['link'.$i.'_out_host'] = $this->hostIdToName($out_hostid);
             $data['link'.$i.'_health_host'] = $this->hostIdToName($health_hostid);
+            $data['link'.$i.'_in_hostid'] = $in_hostid;
+            $data['link'.$i.'_out_hostid'] = $out_hostid;
+            $data['link'.$i.'_health_hostid'] = $health_hostid;
 
             $data['link'.$i.'_in_key'] = $this->getField($fields, $inputs, 'link'.$i.'_in_key', '');
             $data['link'.$i.'_out_key'] = $this->getField($fields, $inputs, 'link'.$i.'_out_key', '');
@@ -325,6 +333,11 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['link'.$i.'_loss_value'] = $this->formatGeneric($loss_value['text']);
             $data['link'.$i.'_latency_value'] = $this->formatGeneric($latency_value['text']);
             $data['link'.$i.'_errors_value'] = $this->formatGeneric($errors_value['text']);
+            $data['link'.$i.'_in_itemid'] = $in_value['itemid'];
+            $data['link'.$i.'_out_itemid'] = $out_value['itemid'];
+            $data['link'.$i.'_loss_itemid'] = $loss_value['itemid'];
+            $data['link'.$i.'_latency_itemid'] = $latency_value['itemid'];
+            $data['link'.$i.'_errors_itemid'] = $errors_value['itemid'];
             $data['link'.$i.'_has_error'] = ($in_value['has_error'] || $out_value['has_error'] || $loss_value['has_error'] || $latency_value['has_error'] || $errors_value['has_error']) ? '1' : '0';
         }
 
@@ -333,10 +346,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['extra'.$i.'_label'] = $this->getField($fields, $inputs, 'extra'.$i.'_label', '');
             $data['extra'.$i.'_host'] = $this->hostIdToName($hostid);
+            $data['extra'.$i.'_hostid'] = $hostid;
             $data['extra'.$i.'_key'] = $this->getField($fields, $inputs, 'extra'.$i.'_key', '');
 
             $extra_value = $this->getLatestRawByHostId($hostid, $data['extra'.$i.'_key'], $allow_random);
             $data['extra'.$i.'_value'] = $this->formatGeneric($extra_value['text']);
+            $data['extra'.$i.'_itemid'] = $extra_value['itemid'];
         }
 
         for ($i = 1; $i <= WidgetForm::MAX_STATUS; $i++) {
@@ -345,6 +360,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['status'.$i.'_label'] = $this->getField($fields, $inputs, 'status'.$i.'_label', '');
             $data['status'.$i.'_host'] = $this->hostIdToName($hostid);
+            $data['status'.$i.'_hostid'] = $hostid;
             $data['status'.$i.'_key'] = $this->getField($fields, $inputs, 'status'.$i.'_key', '');
             $data['status'.$i.'_mode'] = (string) $mode;
             $data['status'.$i.'_good'] = $this->getField($fields, $inputs, 'status'.$i.'_good', '1');
@@ -362,6 +378,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['status'.$i.'_value'] = $status['text'];
             $data['status'.$i.'_class'] = $status['class'];
+            $data['status'.$i.'_itemid'] = $status_value['itemid'];
         }
 
         for ($i = 1; $i <= WidgetForm::MAX_MATRIX_VALUES; $i++) {
@@ -370,6 +387,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['matrix'.$i.'_label'] = $this->getField($fields, $inputs, 'matrix'.$i.'_label', '');
             $data['matrix'.$i.'_host'] = $this->hostIdToName($hostid);
+            $data['matrix'.$i.'_hostid'] = $hostid;
             $data['matrix'.$i.'_key'] = $this->getField($fields, $inputs, 'matrix'.$i.'_key', '');
             $data['matrix'.$i.'_static'] = $this->getField($fields, $inputs, 'matrix'.$i.'_static', '');
             $data['matrix'.$i.'_random'] = $random_enabled;
@@ -382,6 +400,7 @@ class WidgetView extends CControllerDashboardWidgetView {
             }
 
             $data['matrix'.$i.'_value'] = $value;
+            $data['matrix'.$i.'_itemid'] = $matrix_value['itemid'];
         }
 
         for ($i = 1; $i <= WidgetForm::MAX_SPARKS; $i++) {
@@ -400,6 +419,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['spark'.$i.'_label'] = $this->getField($fields, $inputs, 'spark'.$i.'_label', '');
             $data['spark'.$i.'_host'] = $this->hostIdToName($hostid);
+            $data['spark'.$i.'_hostid'] = $hostid;
             $data['spark'.$i.'_key'] = $key;
             $data['spark'.$i.'_group_mode'] = $this->getField($fields, $inputs, 'spark'.$i.'_group_mode', 'port');
             $data['spark'.$i.'_x'] = $this->getField($fields, $inputs, 'spark'.$i.'_x', '50');
@@ -411,8 +431,11 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['spark'.$i.'_item1_label'] = $item1_label;
             $data['spark'.$i.'_item1_value'] = $this->formatGeneric($item1['text']);
+            $data['spark'.$i.'_item1_itemid'] = $item1['itemid'];
             $data['spark'.$i.'_item2_label'] = $item2_label;
             $data['spark'.$i.'_item2_value'] = $this->formatGeneric($item2['text']);
+            $data['spark'.$i.'_item2_itemid'] = $item2['itemid'];
+            $data['spark'.$i.'_itemid'] = $spark_value['itemid'];
         }
 
         $this->setResponse(new CControllerResponseData($data));
