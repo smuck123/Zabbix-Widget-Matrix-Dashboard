@@ -44,6 +44,7 @@ for ($i = 1; $i <= WidgetForm::MAX_LINKS; $i++) {
             ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_to']))
             ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_style']))
             ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_show_label']))
+            ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_label_theme']))
             ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_drilldown']))
             ->addField(new CWidgetFieldSelectView($data['fields']['link'.$i.'_in_host']))
             ->addField(new CWidgetFieldTextBoxView($data['fields']['link'.$i.'_in_key']))
