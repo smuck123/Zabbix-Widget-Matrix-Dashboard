@@ -4,8 +4,8 @@ window.matrix_firewall_form = new class {
     init() {
         const maxNodes = 20;
         const maxLinks = 30;
-        const maxExtras = 6;
-        const maxStatus = 6;
+        const maxExtras = 10;
+        const maxStatus = 10;
 
         const findField = (name) => {
             return document.querySelector('[name="' + name + '"]')
@@ -52,6 +52,7 @@ window.matrix_firewall_form = new class {
         };
 
         const refresh = () => {
+            const layoutMode = getIntValue('layout_mode', 0);
             const nodeCount = getIntValue('node_count', 1);
             const linkCount = getIntValue('link_count', 0);
             const extraCount = getIntValue('extra_count', 0);
@@ -59,14 +60,18 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxNodes; i++) {
                 const visible = i <= nodeCount;
+
                 showField('node' + i + '_label', visible);
                 showField('node' + i + '_host', visible);
+                showField('node' + i + '_x', visible && layoutMode === 1);
+                showField('node' + i + '_y', visible && layoutMode === 1);
                 showField('node' + i + '_cpu_key', visible);
                 showField('node' + i + '_mem_key', visible);
             }
 
             for (let i = 1; i <= maxLinks; i++) {
                 const visible = i <= linkCount;
+
                 showField('link' + i + '_label', visible);
                 showField('link' + i + '_from', visible);
                 showField('link' + i + '_to', visible);
@@ -82,6 +87,7 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxExtras; i++) {
                 const visible = i <= extraCount;
+
                 showField('extra' + i + '_label', visible);
                 showField('extra' + i + '_host', visible);
                 showField('extra' + i + '_key', visible);
@@ -89,6 +95,7 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxStatus; i++) {
                 const visible = i <= statusCount;
+
                 showField('status' + i + '_label', visible);
                 showField('status' + i + '_host', visible);
                 showField('status' + i + '_key', visible);
@@ -103,7 +110,10 @@ window.matrix_firewall_form = new class {
             const name = e.target?.getAttribute('name') || '';
 
             if (
-                name === 'node_count'
+                name === 'layout_mode'
+                || name === 'fields[layout_mode]'
+                || name.endsWith('[layout_mode]')
+                || name === 'node_count'
                 || name === 'fields[node_count]'
                 || name.endsWith('[node_count]')
                 || name === 'link_count'

@@ -93,13 +93,55 @@ class WidgetView extends CControllerDashboardWidgetView {
         return '';
     }
 
-    private function getLatestRawByHostId(string $hostid, string $key): array {
+    private function getRandomValue(string $key): array {
+        $seed = abs(crc32($key.date('YmdHi')));
+
+        if (stripos($key, 'cpu') !== false) {
+            $val = 5 + ($seed % 70);
+            return ['raw' => (float) $val, 'text' => (string) $val];
+        }
+
+        if (stripos($key, 'mem') !== false || stripos($key, 'memory') !== false) {
+            $val = 20 + ($seed % 75);
+            return ['raw' => (float) $val, 'text' => (string) $val];
+        }
+
+        if (stripos($key, 'lat') !== false) {
+            $val = 2 + ($seed % 120);
+            return ['raw' => (float) $val, 'text' => (string) $val];
+        }
+
+        if (stripos($key, 'loss') !== false) {
+            $val = $seed % 4;
+            return ['raw' => (float) $val, 'text' => (string) $val];
+        }
+
+        if (stripos($key, 'err') !== false) {
+            $val = $seed % 20;
+            return ['raw' => (float) $val, 'text' => (string) $val];
+        }
+
+        $bps = 5000000 + (($seed % 1600) * 1000000);
+        return ['raw' => (float) $bps, 'text' => (string) $bps];
+    }
+
+    private function getLatestRawByHostId(string $hostid, string $key, bool $allow_random = false): array {
         $result = [
             'raw' => 0.0,
-            'text' => ''
+            'text' => '',
+            'is_random' => false,
+            'has_error' => false
         ];
 
         if ($hostid === '' || $hostid === '0' || $key === '') {
+            if ($allow_random && $key !== '') {
+                $random = $this->getRandomValue($key);
+                $random['is_random'] = true;
+                $random['has_error'] = true;
+                return $random;
+            }
+
+            $result['has_error'] = true;
             return $result;
         }
 
@@ -127,6 +169,14 @@ class WidgetView extends CControllerDashboardWidgetView {
             return $result;
         }
 
+        if ($allow_random) {
+            $random = $this->getRandomValue($key);
+            $random['is_random'] = true;
+            $random['has_error'] = true;
+            return $random;
+        }
+
+        $result['has_error'] = true;
         return $result;
     }
 
@@ -168,8 +218,13 @@ class WidgetView extends CControllerDashboardWidgetView {
         $fields = $this->getInput('fields', []);
         $inputs = $this->getInputAll();
 
+        $demo_mode = (int) $this->getField($fields, $inputs, 'demo_mode', '0');
+        $allow_random = ($demo_mode === WidgetForm::DEMO_RANDOM);
+
         $data = [
             'name' => $this->getInput('name', 'Matrix Firewall'),
+            'layout_mode' => $this->getField($fields, $inputs, 'layout_mode', '0'),
+            'demo_mode' => $this->getField($fields, $inputs, 'demo_mode', '0'),
             'node_count' => $this->getField($fields, $inputs, 'node_count', '5'),
             'link_count' => $this->getField($fields, $inputs, 'link_count', '3'),
             'extra_count' => $this->getField($fields, $inputs, 'extra_count', '0'),
@@ -182,15 +237,18 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['node'.$i.'_label'] = $this->getField($fields, $inputs, 'node'.$i.'_label', '');
             $data['node'.$i.'_hostid'] = $node_hostid;
             $data['node'.$i.'_host'] = $this->hostIdToName($node_hostid);
+            $data['node'.$i.'_x'] = $this->getField($fields, $inputs, 'node'.$i.'_x', '10');
+            $data['node'.$i.'_y'] = $this->getField($fields, $inputs, 'node'.$i.'_y', '10');
 
             $data['node'.$i.'_cpu_key'] = $this->getField($fields, $inputs, 'node'.$i.'_cpu_key', '');
             $data['node'.$i.'_mem_key'] = $this->getField($fields, $inputs, 'node'.$i.'_mem_key', '');
 
-            $cpu = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_cpu_key']);
-            $mem = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_mem_key']);
+            $cpu = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_cpu_key'], $allow_random);
+            $mem = $this->getLatestRawByHostId($node_hostid, $data['node'.$i.'_mem_key'], $allow_random);
 
             $data['node'.$i.'_cpu_value'] = $this->formatGeneric($cpu['text']);
             $data['node'.$i.'_mem_value'] = $this->formatGeneric($mem['text']);
+            $data['node'.$i.'_has_error'] = ($cpu['has_error'] || $mem['has_error']) ? '1' : '0';
         }
 
         for ($i = 1; $i <= WidgetForm::MAX_LINKS; $i++) {
@@ -212,11 +270,11 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['link'.$i.'_latency_key'] = $this->getField($fields, $inputs, 'link'.$i.'_latency_key', '');
             $data['link'.$i.'_errors_key'] = $this->getField($fields, $inputs, 'link'.$i.'_errors_key', '');
 
-            $in_value = $this->getLatestRawByHostId($in_hostid, $data['link'.$i.'_in_key']);
-            $out_value = $this->getLatestRawByHostId($out_hostid, $data['link'.$i.'_out_key']);
-            $loss_value = $this->getLatestRawByHostId($health_hostid, $data['link'.$i.'_loss_key']);
-            $latency_value = $this->getLatestRawByHostId($health_hostid, $data['link'.$i.'_latency_key']);
-            $errors_value = $this->getLatestRawByHostId($health_hostid, $data['link'.$i.'_errors_key']);
+            $in_value = $this->getLatestRawByHostId($in_hostid, $data['link'.$i.'_in_key'], $allow_random);
+            $out_value = $this->getLatestRawByHostId($out_hostid, $data['link'.$i.'_out_key'], $allow_random);
+            $loss_value = $this->getLatestRawByHostId($health_hostid, $data['link'.$i.'_loss_key'], $allow_random);
+            $latency_value = $this->getLatestRawByHostId($health_hostid, $data['link'.$i.'_latency_key'], $allow_random);
+            $errors_value = $this->getLatestRawByHostId($health_hostid, $data['link'.$i.'_errors_key'], $allow_random);
 
             $data['link'.$i.'_in_value'] = $this->formatTraffic($in_value['text']);
             $data['link'.$i.'_out_value'] = $this->formatTraffic($out_value['text']);
@@ -226,6 +284,7 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['link'.$i.'_loss_value'] = $this->formatGeneric($loss_value['text']);
             $data['link'.$i.'_latency_value'] = $this->formatGeneric($latency_value['text']);
             $data['link'.$i.'_errors_value'] = $this->formatGeneric($errors_value['text']);
+            $data['link'.$i.'_has_error'] = ($in_value['has_error'] || $out_value['has_error'] || $loss_value['has_error'] || $latency_value['has_error'] || $errors_value['has_error']) ? '1' : '0';
         }
 
         for ($i = 1; $i <= WidgetForm::MAX_EXTRAS; $i++) {
@@ -235,7 +294,7 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['extra'.$i.'_host'] = $this->hostIdToName($hostid);
             $data['extra'.$i.'_key'] = $this->getField($fields, $inputs, 'extra'.$i.'_key', '');
 
-            $extra_value = $this->getLatestRawByHostId($hostid, $data['extra'.$i.'_key']);
+            $extra_value = $this->getLatestRawByHostId($hostid, $data['extra'.$i.'_key'], $allow_random);
             $data['extra'.$i.'_value'] = $this->formatGeneric($extra_value['text']);
         }
 
@@ -251,7 +310,7 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['status'.$i.'_warn'] = $this->getField($fields, $inputs, 'status'.$i.'_warn', '2');
             $data['status'.$i.'_crit'] = $this->getField($fields, $inputs, 'status'.$i.'_crit', '3');
 
-            $status_value = $this->getLatestRawByHostId($hostid, $data['status'.$i.'_key']);
+            $status_value = $this->getLatestRawByHostId($hostid, $data['status'.$i.'_key'], $allow_random);
             $status = $this->getStatusText(
                 $status_value['text'],
                 $mode,

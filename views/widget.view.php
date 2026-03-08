@@ -5,10 +5,12 @@
  * @var array $data
  */
 
+use Modules\MatrixFirewall\Includes\WidgetForm;
+
 $max_nodes = 20;
 $max_links = 30;
-$max_extras = 6;
-$max_status = 6;
+$max_extras = 10;
+$max_status = 10;
 
 $clampInt = static function($value, int $min, int $max, int $default): int {
     if ($value === '' || !is_numeric($value)) {
@@ -83,62 +85,69 @@ $node_count = $clampInt($data['node_count'] ?? 5, 1, $max_nodes, 5);
 $link_count = $clampInt($data['link_count'] ?? 3, 0, $max_links, 3);
 $extra_count = $clampInt($data['extra_count'] ?? 0, 0, $max_extras, 0);
 $status_count = $clampInt($data['status_count'] ?? 0, 0, $max_status, 0);
+$layout_mode = $clampInt($data['layout_mode'] ?? 0, 0, 1, 0);
 
-/*
- * Better node layout:
- * - wider margins
- * - fewer columns on small sets
- * - more vertical separation
- */
 $nodes = [];
 
-if ($node_count <= 3) {
-    $cols = $node_count;
-}
-elseif ($node_count <= 6) {
-    $cols = 3;
-}
-elseif ($node_count <= 12) {
-    $cols = 4;
+if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
+    for ($i = 1; $i <= $node_count; $i++) {
+        $nodes[$i] = [
+            'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
+            'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
+            'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
+            'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
+            'x' => $clampInt($data['node'.$i.'_x'] ?? 10, 2, 90, 10),
+            'y' => $clampInt($data['node'.$i.'_y'] ?? 10, 6, 78, 10)
+        ];
+    }
 }
 else {
-    $cols = 5;
-}
-
-$rows = max(1, (int) ceil($node_count / $cols));
-
-$x_start = 7;
-$x_end = 83;
-$y_start = 10;
-$y_end = 72;
-
-$x_step = ($cols > 1) ? (($x_end - $x_start) / ($cols - 1)) : 0;
-$y_step = ($rows > 1) ? (($y_end - $y_start) / ($rows - 1)) : 0;
-
-for ($i = 1; $i <= $node_count; $i++) {
-    $label = trim((string) ($data['node'.$i.'_label'] ?? ''));
-    $host = trim((string) ($data['node'.$i.'_host'] ?? ''));
-
-    $index = $i - 1;
-    $row = (int) floor($index / $cols);
-    $col = $index % $cols;
-
-    $x = ($cols === 1) ? 44 : ($x_start + ($col * $x_step));
-    $y = ($rows === 1) ? 26 : ($y_start + ($row * $y_step));
-
-    /* small stagger so boxes do not feel too rigid */
-    if (($row % 2) === 1) {
-        $x += 2.5;
+    if ($node_count <= 3) {
+        $cols = $node_count;
+    }
+    elseif ($node_count <= 6) {
+        $cols = 3;
+    }
+    elseif ($node_count <= 12) {
+        $cols = 4;
+    }
+    else {
+        $cols = 5;
     }
 
-    $nodes[$i] = [
-        'label' => $label,
-        'host' => $host,
-        'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
-        'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
-        'x' => min(86, max(5, $x)),
-        'y' => min(74, max(8, $y))
-    ];
+    $rows = max(1, (int) ceil($node_count / $cols));
+
+    $x_start = 7;
+    $x_end = 83;
+    $y_start = 10;
+    $y_end = 72;
+
+    $x_step = ($cols > 1) ? (($x_end - $x_start) / ($cols - 1)) : 0;
+    $y_step = ($rows > 1) ? (($y_end - $y_start) / ($rows - 1)) : 0;
+
+    for ($i = 1; $i <= $node_count; $i++) {
+        $index = $i - 1;
+        $row = (int) floor($index / $cols);
+        $col = $index % $cols;
+
+        $x = ($cols === 1) ? 44 : ($x_start + ($col * $x_step));
+        $y = ($rows === 1) ? 26 : ($y_start + ($row * $y_step));
+
+        if (($row % 2) === 1) {
+            $x += 2.5;
+        }
+
+        $nodes[$i] = [
+            'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
+            'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
+            'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
+            'mem' => trim((string) ($data['node'.$i.'_mem_value'] ?? '')),
+            'has_error' => (($data['node'.$i.'_has_error'] ?? '0') === '1'),
+            'x' => min(86, max(5, $x)),
+            'y' => min(74, max(8, $y))
+        ];
+    }
 }
 
 $status_bar = (new CDiv())->addClass('mf-status-bar');
@@ -155,7 +164,6 @@ for ($i = 1; $i <= $status_count; $i++) {
     $chip = (new CDiv())->addClass('mf-status-chip mf-status-'.$class);
     $chip->addItem((new CDiv($label !== '' ? $label : 'Status '.$i))->addClass('mf-status-chip-label'));
     $chip->addItem((new CDiv($value !== '' ? $value : 'No value'))->addClass('mf-status-chip-value'));
-
     $status_bar->addItem($chip);
 }
 
@@ -186,22 +194,40 @@ for ($i = 1; $i <= $link_count; $i++) {
     $traffic = max($in_raw, $out_raw);
 
     $style = $getTrafficStyle($traffic);
+    $has_error = (($data['link'.$i.'_has_error'] ?? '0') === '1');
 
-    /* node anchor points closer to box center */
-    $x1 = (int) round(($nodes[$from]['x'] + 5.8) * 10);
-    $y1 = (int) round(($nodes[$from]['y'] + 5.2) * 7);
-    $x2 = (int) round(($nodes[$to]['x'] + 5.8) * 10);
-    $y2 = (int) round(($nodes[$to]['y'] + 5.2) * 7);
+    /*
+     * Use box edge anchors instead of center.
+     * Node box is about 150px wide / 84px high in CSS.
+     * In SVG coordinates we approximate that footprint.
+     */
+    $node_box_w = 72;
+    $node_box_h = 46;
 
-    $dx = $x2 - $x1;
-    $dy = $y2 - $y1;
+    $cx1 = ($nodes[$from]['x'] + 4.7) * 10;
+    $cy1 = ($nodes[$from]['y'] + 4.4) * 7;
+
+    $cx2 = ($nodes[$to]['x'] + 4.7) * 10;
+    $cy2 = ($nodes[$to]['y'] + 4.4) * 7;
+
+    $dx = $cx2 - $cx1;
+    $dy = $cy2 - $cy1;
     $len = sqrt($dx * $dx + $dy * $dy);
     if ($len == 0) {
         $len = 1;
     }
 
-    $px = -$dy / $len;
-    $py =  $dx / $len;
+    $ux = $dx / $len;
+    $uy = $dy / $len;
+
+    $x1 = $cx1 + ($ux * $node_box_w);
+    $y1 = $cy1 + ($uy * $node_box_h);
+
+    $x2 = $cx2 - ($ux * $node_box_w);
+    $y2 = $cy2 - ($uy * $node_box_h);
+
+    $px = -$uy;
+    $py = $ux;
 
     $line_offset = (($i % 5) - 2) * 6;
 
@@ -213,7 +239,6 @@ for ($i = 1; $i <= $link_count; $i++) {
     $mx = ($x1o + $x2o) / 2;
     $my = ($y1o + $y2o) / 2;
 
-    /* smaller, smarter link-label movement */
     $label_offset = (($i % 5) - 2) * 18;
     $mx += $px * $label_offset;
     $my += $py * $label_offset;
@@ -258,7 +283,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         $svg->addItem($ball);
     }
 
-    $label_box = (new CDiv())->addClass('mf-link-label');
+    $label_box = (new CDiv())->addClass('mf-link-label'.($has_error ? ' mf-link-label-error' : ''));
 
     if ($label !== '') {
         $label_box->addItem((new CDiv($label))->addClass('mf-link-title'));
@@ -269,19 +294,15 @@ for ($i = 1; $i <= $link_count; $i++) {
     if ($in_value !== '') {
         $mini->addItem((new CDiv('IN '.$in_value))->addClass('mf-link-item-line'));
     }
-
     if ($out_value !== '') {
         $mini->addItem((new CDiv('OUT '.$out_value))->addClass('mf-link-item-line'));
     }
-
     if ($loss_value !== '') {
         $mini->addItem((new CDiv('LOSS '.$loss_value))->addClass('mf-link-item-line'));
     }
-
     if ($latency_value !== '') {
         $mini->addItem((new CDiv('LAT '.$latency_value))->addClass('mf-link-item-line'));
     }
-
     if ($errors_value !== '') {
         $mini->addItem((new CDiv('ERR '.$errors_value))->addClass('mf-link-item-line'));
     }
@@ -296,7 +317,7 @@ for ($i = 1; $i <= $link_count; $i++) {
         'style',
         'left: calc('.round($mx / 10, 2).'%' .
         ' - 82px); top: calc('.round($my / 7, 2).'%' .
-        ' - 20px); border-color: '.$style['color'].';'
+        ' - 20px); border-color: '.$style['color'].'; box-shadow: 0 0 12px '.$style['color'].'22, inset 0 0 10px '.$style['color'].'14;'
     );
 
     $link_labels_layer->addItem($label_box);
@@ -321,7 +342,7 @@ $canvas = (new CDiv())
 
 for ($i = 1; $i <= $node_count; $i++) {
     $node = (new CDiv())
-        ->addClass('mf-node')
+        ->addClass('mf-node'.($nodes[$i]['has_error'] ? ' mf-node-error' : ''))
         ->setAttribute('style', 'left: '.$nodes[$i]['x'].'%; top: '.$nodes[$i]['y'].'%;');
 
     $head = (new CDiv())->addClass('mf-node-head');
@@ -370,6 +391,10 @@ for ($i = 1; $i <= $extra_count; $i++) {
     $extras->addItem($card);
 }
 
+$legend_text = (($data['demo_mode'] ?? '0') === '1')
+    ? 'Demo fallback enabled: missing items use random values.'
+    : 'High traffic = thicker line, hotter color, faster balls.';
+
 (new CWidgetView($data))
     ->addItem(
         (new CDiv())
@@ -378,7 +403,7 @@ for ($i = 1; $i <= $extra_count; $i++) {
             ->addItem((new CDiv('Traffic heatmap + status strip'))->addClass('mf-subtitle'))
             ->addItem($status_bar)
             ->addItem($canvas)
-            ->addItem((new CDiv('High traffic = thicker line, hotter color, faster balls.'))->addClass('mf-legend'))
+            ->addItem((new CDiv($legend_text))->addClass('mf-legend'))
             ->addItem($extras)
     )
     ->show();

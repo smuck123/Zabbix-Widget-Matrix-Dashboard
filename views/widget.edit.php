@@ -10,6 +10,8 @@ use Modules\MatrixFirewall\Includes\WidgetForm;
 $form = (new CWidgetFormView($data))
     ->addFieldset(
         (new CWidgetFormFieldsetCollapsibleView('General'))
+            ->addField(new CWidgetFieldSelectView($data['fields']['layout_mode']))
+            ->addField(new CWidgetFieldSelectView($data['fields']['demo_mode']))
             ->addField(new CWidgetFieldSelectView($data['fields']['node_count']))
             ->addField(new CWidgetFieldSelectView($data['fields']['link_count']))
             ->addField(new CWidgetFieldSelectView($data['fields']['extra_count']))
@@ -22,6 +24,8 @@ for ($i = 1; $i <= WidgetForm::MAX_NODES; $i++) {
     $nodes_fieldset
         ->addField(new CWidgetFieldTextBoxView($data['fields']['node'.$i.'_label']))
         ->addField(new CWidgetFieldSelectView($data['fields']['node'.$i.'_host']))
+        ->addField(new CWidgetFieldIntegerBoxView($data['fields']['node'.$i.'_x']))
+        ->addField(new CWidgetFieldIntegerBoxView($data['fields']['node'.$i.'_y']))
         ->addField(new CWidgetFieldTextBoxView($data['fields']['node'.$i.'_cpu_key']))
         ->addField(new CWidgetFieldTextBoxView($data['fields']['node'.$i.'_mem_key']));
 }

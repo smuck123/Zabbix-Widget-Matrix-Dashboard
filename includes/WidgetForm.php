@@ -3,6 +3,7 @@
 namespace Modules\MatrixFirewall\Includes;
 
 use Zabbix\Widgets\CWidgetForm;
+use Zabbix\Widgets\Fields\CWidgetFieldIntegerBox;
 use Zabbix\Widgets\Fields\CWidgetFieldSelect;
 use Zabbix\Widgets\Fields\CWidgetFieldTextBox;
 
@@ -10,8 +11,14 @@ class WidgetForm extends CWidgetForm {
 
     public const MAX_NODES = 20;
     public const MAX_LINKS = 30;
-    public const MAX_EXTRAS = 6;
-    public const MAX_STATUS = 6;
+    public const MAX_EXTRAS = 10;
+    public const MAX_STATUS = 10;
+
+    public const LAYOUT_AUTO = 0;
+    public const LAYOUT_MANUAL = 1;
+
+    public const DEMO_OFF = 0;
+    public const DEMO_RANDOM = 1;
 
     public const STATUS_MODE_RAW = 0;
     public const STATUS_MODE_GOODBAD = 1;
@@ -58,6 +65,20 @@ class WidgetForm extends CWidgetForm {
         return $options;
     }
 
+    private function getLayoutOptions(): array {
+        return [
+            self::LAYOUT_AUTO => 'Auto layout',
+            self::LAYOUT_MANUAL => 'Manual node X/Y'
+        ];
+    }
+
+    private function getDemoOptions(): array {
+        return [
+            self::DEMO_OFF => 'Real values only',
+            self::DEMO_RANDOM => 'Random fallback when missing'
+        ];
+    }
+
     private function getStatusModeOptions(): array {
         return [
             self::STATUS_MODE_RAW => 'Raw',
@@ -72,6 +93,20 @@ class WidgetForm extends CWidgetForm {
         $status_modes = $this->getStatusModeOptions();
 
         $this
+            ->addField(
+                (new CWidgetFieldSelect(
+                    'layout_mode',
+                    'Layout mode',
+                    $this->getLayoutOptions()
+                ))->setDefault(self::LAYOUT_AUTO)
+            )
+            ->addField(
+                (new CWidgetFieldSelect(
+                    'demo_mode',
+                    'Fallback mode',
+                    $this->getDemoOptions()
+                ))->setDefault(self::DEMO_OFF)
+            )
             ->addField(
                 (new CWidgetFieldSelect(
                     'node_count',
@@ -115,6 +150,18 @@ class WidgetForm extends CWidgetForm {
                         'Node '.$i.' host',
                         $host_options
                     ))->setDefault(0)
+                )
+                ->addField(
+                    (new CWidgetFieldIntegerBox(
+                        'node'.$i.'_x',
+                        'Node '.$i.' X %'
+                    ))->setDefault(10)
+                )
+                ->addField(
+                    (new CWidgetFieldIntegerBox(
+                        'node'.$i.'_y',
+                        'Node '.$i.' Y %'
+                    ))->setDefault(10)
                 )
                 ->addField(
                     (new CWidgetFieldTextBox(
