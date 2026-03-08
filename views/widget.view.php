@@ -1063,9 +1063,17 @@ $drag_script = <<<'JS'
         return;
     }
 
+    const widgetContainer = root.closest('[data-widgetid]')
+        || root.closest('.dashboard-grid-widget')
+        || root.closest('[id]');
+    const widgetId = widgetContainer
+        ? (widgetContainer.getAttribute('data-widgetid') || widgetContainer.id || '')
+        : '';
+
     const roots = Array.from(document.querySelectorAll('.mf-root'));
     const rootIndex = roots.indexOf(root);
-    const storeKey = 'mf-link-label-offsets-v2-' + (rootIndex >= 0 ? rootIndex : 0);
+    const storeScope = widgetId !== '' ? widgetId : (rootIndex >= 0 ? String(rootIndex) : '0');
+    const storeKey = 'mf-link-label-offsets-v3-' + storeScope;
     let offsets = {};
 
     try {
