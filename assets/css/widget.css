@@ -384,7 +384,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 
 .mf-spark-more {
