@@ -14,6 +14,8 @@
   - 6 spark widgets (JSON-driven mini visualizations)
 - Auto or manual node layout.
 - Link styles: elbow, straight, curved, explosive, dots, jumping, file transfer, zigzag.
+- Link label themes: 20 compact presets (from simple dotted/minimal styles to richer HUD/neon styles), with automatic theme suggestion based on link item key names.
+- Link labels can be dragged to custom positions (saved in browser session storage).
 - Optional demo/random fallback mode when values are missing.
 - Per-node and per-link item key mapping to pull real Zabbix values.
 - Multiple node themes: box, glass, terminal, pill, neon, panel, outline, status panel, extra panel.
