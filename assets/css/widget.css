@@ -201,6 +201,9 @@
     width: 148px;
     min-height: 46px;
     padding: 5px 8px;
+    cursor: default;
+    user-select: none;
+    touch-action: none;
     border: 1px solid color-mix(in srgb, var(--mf-link-color, #6bff9e) 75%, #ffffff 8%);
     border-radius: 10px;
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.90), rgba(2, 14, 10, 0.86));
@@ -221,6 +224,10 @@
 
 .mf-drilldown:hover {
     filter: brightness(1.05);
+}
+
+.mf-link-label.mf-drilldown {
+    cursor: default;
 }
 
 .mf-link-label-error {
@@ -259,6 +266,7 @@
 }
 
 .mf-link-title {
+    margin-top: 8px;
     font-size: 10px;
     font-weight: 700;
     color: #f2fff7;

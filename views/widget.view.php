@@ -702,6 +702,7 @@ for ($i = 1; $i <= $link_count; $i++) {
 
         $label_box = (new CDiv())->addClass('mf-link-label mf-link-label-theme-'.$resolved_theme.($has_error ? ' mf-link-label-error' : ''));
         $applyDrilldown($label_box, $link_url);
+        $label_box->addItem((new CDiv('⋮⋮'))->addClass('mf-link-label-drag'));
 
         if ($label !== '') {
             $label_box->addItem((new CDiv($shortText($label, 16)))->addClass('mf-link-title'));
@@ -722,10 +723,11 @@ for ($i = 1; $i <= $link_count; $i++) {
 
         $label_box->setAttribute(
             'style',
-            '--mf-link-color: '.$style['color'].'; left: calc('.round($mx / 10, 2).'%' .
-            ' - 74px); top: calc('.round($my / 7, 2).'%' .
-            ' - 24px);'
+            '--mf-link-color: '.$style['color'].'; --mf-label-dx: 0px; --mf-label-dy: 0px; left: calc('.round($mx / 10, 2).'%' .
+            ' - 74px + var(--mf-label-dx)); top: calc('.round($my / 7, 2).'%' .
+            ' - 24px + var(--mf-label-dy));'
         );
+        $label_box->setAttribute('data-mf-link-id', (string) $i);
 
         $link_labels_layer->addItem($label_box);
     }
@@ -1060,4 +1062,5 @@ $legend_text = (($data['demo_mode'] ?? '0') === '1')
             ->addItem((new CDiv($legend_text))->addClass('mf-legend'))
             ->addItem($extras)
     )
+    ->addItem($script_tag)
     ->show();
