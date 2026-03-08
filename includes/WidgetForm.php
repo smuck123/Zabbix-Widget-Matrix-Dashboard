@@ -228,7 +228,11 @@ class WidgetForm extends CWidgetForm {
                 ->addField((new CWidgetFieldTextBox('spark'.$i.'_key', 'Spark '.$i.' JSON item key'))->setDefault(''))
                 ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_x', 'Spark '.$i.' X %'))->setDefault(50))
                 ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_y', 'Spark '.$i.' Y %'))->setDefault(50))
-                ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_max', 'Spark '.$i.' max links'))->setDefault(12));
+                ->addField((new CWidgetFieldIntegerBox('spark'.$i.'_max', 'Spark '.$i.' max links'))->setDefault(12))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_item1_label', 'Spark '.$i.' item 1 label'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_item1_key', 'Spark '.$i.' item 1 key'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_item2_label', 'Spark '.$i.' item 2 label'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('spark'.$i.'_item2_key', 'Spark '.$i.' item 2 key'))->setDefault(''));
         }
 
         return $this;

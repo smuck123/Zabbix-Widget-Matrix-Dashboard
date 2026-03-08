@@ -118,6 +118,10 @@ window.matrix_firewall_form = new class {
                 showField('spark' + i + '_x', visible);
                 showField('spark' + i + '_y', visible);
                 showField('spark' + i + '_max', visible);
+                showField('spark' + i + '_item1_label', visible);
+                showField('spark' + i + '_item1_key', visible);
+                showField('spark' + i + '_item2_label', visible);
+                showField('spark' + i + '_item2_key', visible);
             }
         };
 

@@ -33,8 +33,12 @@ $clampInt = static function($value, int $min, int $max, int $default): int {
 
 $shortText = static function(string $value, int $limit = 28): string {
     $value = trim($value);
-    if ($value === '') return '';
-    if (mb_strlen($value) > $limit) return mb_substr($value, 0, $limit).'...';
+    if ($value === '') {
+        return '';
+    }
+    if (mb_strlen($value) > $limit) {
+        return mb_substr($value, 0, $limit).'...';
+    }
     return $value;
 };
 
@@ -64,13 +68,13 @@ $getNodeTypeMeta = static function(int $type): array {
 $getMatrixDurations = static function(int $speed): array {
     switch ($speed) {
         case WidgetForm::MATRIX_SPEED_SLOW:
-            return [18, 14, 16, 20, 15, 19, 17, 21, 16, 22];
+            return [18, 14, 16, 20, 15, 19, 17, 21, 16, 22, 18, 20];
         case WidgetForm::MATRIX_SPEED_FAST:
-            return [8, 6, 7, 9, 7, 10, 8, 11, 6, 9];
+            return [8, 6, 7, 9, 7, 10, 8, 11, 6, 9, 7, 8];
         case WidgetForm::MATRIX_SPEED_VERY_FAST:
-            return [4, 3, 5, 4, 3, 5, 4, 6, 3, 4];
+            return [4, 3, 5, 4, 3, 5, 4, 6, 3, 4, 5, 3];
         default:
-            return [12, 8, 10, 14, 9, 13, 11, 15, 10, 12];
+            return [12, 8, 10, 14, 9, 13, 11, 15, 10, 12, 11, 13];
     }
 };
 
@@ -159,6 +163,31 @@ $getMidPointOnPolyline = static function(array $points): array {
     return [$last[0], $last[1]];
 };
 
+$getSparkPortMeta = static function(string $port): array {
+    $p = (int) $port;
+
+    if ($p === 22) {
+        return ['key' => 'ssh', 'title' => 'SSH', 'class' => 'mf-spark-port-ssh'];
+    }
+    if (in_array($p, [80, 8080], true)) {
+        return ['key' => 'web', 'title' => 'WEB', 'class' => 'mf-spark-port-web'];
+    }
+    if (in_array($p, [443, 8443], true)) {
+        return ['key' => 'tls', 'title' => 'TLS', 'class' => 'mf-spark-port-tls'];
+    }
+    if ($p === 3389) {
+        return ['key' => 'rdp', 'title' => 'RDP', 'class' => 'mf-spark-port-rdp'];
+    }
+    if ($p === 5228) {
+        return ['key' => 'app', 'title' => 'APP', 'class' => 'mf-spark-port-app'];
+    }
+    if ($p >= 27000 && $p <= 27100) {
+        return ['key' => 'game', 'title' => 'GAME', 'class' => 'mf-spark-port-game'];
+    }
+
+    return ['key' => 'other', 'title' => 'OTHER', 'class' => 'mf-spark-port-default'];
+};
+
 $node_count = $clampInt($data['node_count'] ?? 5, 1, $max_nodes, 5);
 $link_count = $clampInt($data['link_count'] ?? 3, 0, $max_links, 3);
 $extra_count = $clampInt($data['extra_count'] ?? 0, 0, $max_extras, 0);
@@ -185,10 +214,18 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
     }
 }
 else {
-    if ($node_count <= 3) $cols = $node_count;
-    elseif ($node_count <= 6) $cols = 3;
-    elseif ($node_count <= 12) $cols = 4;
-    else $cols = 5;
+    if ($node_count <= 3) {
+        $cols = $node_count;
+    }
+    elseif ($node_count <= 6) {
+        $cols = 3;
+    }
+    elseif ($node_count <= 12) {
+        $cols = 4;
+    }
+    else {
+        $cols = 5;
+    }
 
     $rows = max(1, (int) ceil($node_count / $cols));
 
@@ -511,8 +548,10 @@ for ($i = 1; $i <= $link_count; $i++) {
 $canvas = (new CDiv())->addClass('mf-canvas');
 
 $matrix_bg = (new CDiv())->addClass('mf-matrix-bg');
+$matrix_repeat = ($matrix_speed === WidgetForm::MATRIX_SPEED_VERY_FAST) ? 5 : 3;
+
 for ($i = 0; $i < count($matrix_values); $i++) {
-    $text = $matrix_values[$i].' '.$matrix_values[$i].' '.$matrix_values[$i];
+    $text = trim(str_repeat($matrix_values[$i].' ', $matrix_repeat));
     $column = (new CDiv($text))->addClass('mf-column');
     $column->setAttribute('style', 'animation-duration: '.$durations[$i % count($durations)].'s;');
     $matrix_bg->addItem($column);
@@ -559,6 +598,11 @@ for ($i = 1; $i <= $spark_count; $i++) {
     $count = $clampInt($data['spark'.$i.'_count'] ?? 0, 0, 100, 0);
     $error = trim((string) ($data['spark'.$i.'_error'] ?? ''));
 
+    $item1_label = trim((string) ($data['spark'.$i.'_item1_label'] ?? ''));
+    $item1_value = trim((string) ($data['spark'.$i.'_item1_value'] ?? ''));
+    $item2_label = trim((string) ($data['spark'.$i.'_item2_label'] ?? ''));
+    $item2_value = trim((string) ($data['spark'.$i.'_item2_value'] ?? ''));
+
     if ($label === '' && $host === '' && !$items && $error === '') {
         continue;
     }
@@ -579,26 +623,75 @@ for ($i = 1; $i <= $spark_count; $i++) {
     else {
         $spark->addItem((new CDiv('Flows '.$count))->addClass('mf-spark-count'));
 
-        $spark_ring = (new CDiv())->addClass('mf-spark-ring');
-
-        $total = count($items);
-        foreach ($items as $idx => $item) {
-            $angle = ($total > 0) ? ((360 / $total) * $idx) : 0;
-            $radius = 78 + (($idx % 3) * 18);
-
-            $entry = (new CDiv())->addClass('mf-spark-entry');
-            $entry->setAttribute(
-                'style',
-                'transform: rotate('.$angle.'deg) translate('.$radius.'px) rotate(-'.$angle.'deg);'
-            );
-
-            $entry->addItem((new CDiv(''))->addClass('mf-spark-bolt'));
-            $entry->addItem((new CDiv($shortText($item['label'] ?? '', 30)))->addClass('mf-spark-label'));
-
-            $spark_ring->addItem($entry);
+        $own = (new CDiv())->addClass('mf-spark-own-items');
+        if ($item1_label !== '' || $item1_value !== '') {
+            $own->addItem((new CDiv(trim($item1_label.' '.$item1_value)))->addClass('mf-spark-own-line'));
+        }
+        if ($item2_label !== '' || $item2_value !== '') {
+            $own->addItem((new CDiv(trim($item2_label.' '.$item2_value)))->addClass('mf-spark-own-line'));
+        }
+        if ($item1_label !== '' || $item1_value !== '' || $item2_label !== '' || $item2_value !== '') {
+            $spark->addItem($own);
         }
 
-        $spark->addItem($spark_ring);
+        $groups = [];
+
+        foreach ($items as $item) {
+            $meta = $getSparkPortMeta((string) ($item['port'] ?? ''));
+
+            if (!array_key_exists($meta['key'], $groups)) {
+                $groups[$meta['key']] = [
+                    'title' => $meta['title'],
+                    'class' => $meta['class'],
+                    'items' => []
+                ];
+            }
+
+            $groups[$meta['key']]['items'][] = $item;
+        }
+
+        $positions = [
+            'tls'   => ['class' => 'mf-spark-group-right',      'line' => 'mf-spark-line-right'],
+            'web'   => ['class' => 'mf-spark-group-up-right',   'line' => 'mf-spark-line-up-right'],
+            'ssh'   => ['class' => 'mf-spark-group-down-right', 'line' => 'mf-spark-line-down-right'],
+            'rdp'   => ['class' => 'mf-spark-group-left',       'line' => 'mf-spark-line-left'],
+            'app'   => ['class' => 'mf-spark-group-up-left',    'line' => 'mf-spark-line-up-left'],
+            'game'  => ['class' => 'mf-spark-group-down-left',  'line' => 'mf-spark-line-down-left'],
+            'other' => ['class' => 'mf-spark-group-bottom',     'line' => 'mf-spark-line-bottom']
+        ];
+
+        foreach ($groups as $group_key => $group) {
+            $pos = $positions[$group_key] ?? $positions['other'];
+
+            $line = (new CDiv())->addClass('mf-spark-line '.$pos['line'].' '.$group['class']);
+            $spark->addItem($line);
+
+            $box = (new CDiv())->addClass('mf-spark-group-box '.$pos['class'].' '.$group['class']);
+            $box->addItem(
+                (new CDiv($group['title'].' '.count($group['items'])))
+                    ->addClass('mf-spark-group-title')
+            );
+
+            $shown = 0;
+            foreach ($group['items'] as $entry) {
+                $shown++;
+
+                if ($shown > 6) {
+                    $remaining = count($group['items']) - 6;
+                    if ($remaining > 0) {
+                        $box->addItem((new CDiv('+'.$remaining.' more'))->addClass('mf-spark-more'));
+                    }
+                    break;
+                }
+
+                $box->addItem(
+                    (new CDiv($shortText($entry['label'] ?? '', 34)))
+                        ->addClass('mf-spark-group-item')
+                );
+            }
+
+            $spark->addItem($box);
+        }
     }
 
     $canvas->addItem($spark);
@@ -611,7 +704,9 @@ for ($i = 1; $i <= $extra_count; $i++) {
     $host = trim((string) ($data['extra'.$i.'_host'] ?? ''));
     $value = trim((string) ($data['extra'.$i.'_value'] ?? ''));
 
-    if ($label === '' && $host === '' && $value === '') continue;
+    if ($label === '' && $host === '' && $value === '') {
+        continue;
+    }
 
     $card = (new CDiv())->addClass('mf-extra-card');
 

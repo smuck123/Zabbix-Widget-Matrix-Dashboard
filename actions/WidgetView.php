@@ -151,7 +151,7 @@ class WidgetView extends CControllerDashboardWidgetView {
             'filter' => ['key_' => [$key]]
         ]);
 
-        if (!empty($items[0]['lastvalue'])) {
+        if (isset($items[0]['lastvalue']) && $items[0]['lastvalue'] !== '') {
             $result['raw'] = (float) $items[0]['lastvalue'];
             $result['text'] = (string) $items[0]['lastvalue'];
             return $result;
@@ -163,7 +163,7 @@ class WidgetView extends CControllerDashboardWidgetView {
             'search' => ['key_' => $key]
         ]);
 
-        if (!empty($items[0]['lastvalue'])) {
+        if (isset($items[0]['lastvalue']) && $items[0]['lastvalue'] !== '') {
             $result['raw'] = (float) $items[0]['lastvalue'];
             $result['text'] = (string) $items[0]['lastvalue'];
             return $result;
@@ -390,6 +390,14 @@ class WidgetView extends CControllerDashboardWidgetView {
             $spark_value = $this->getLatestRawByHostId($hostid, $key, false);
             $spark_json = $this->parseSparkJson($spark_value['text'], (int) $this->getField($fields, $inputs, 'spark'.$i.'_max', '12'));
 
+            $item1_label = $this->getField($fields, $inputs, 'spark'.$i.'_item1_label', '');
+            $item1_key = $this->getField($fields, $inputs, 'spark'.$i.'_item1_key', '');
+            $item2_label = $this->getField($fields, $inputs, 'spark'.$i.'_item2_label', '');
+            $item2_key = $this->getField($fields, $inputs, 'spark'.$i.'_item2_key', '');
+
+            $item1 = $this->getLatestRawByHostId($hostid, $item1_key, $allow_random);
+            $item2 = $this->getLatestRawByHostId($hostid, $item2_key, $allow_random);
+
             $data['spark'.$i.'_label'] = $this->getField($fields, $inputs, 'spark'.$i.'_label', '');
             $data['spark'.$i.'_host'] = $this->hostIdToName($hostid);
             $data['spark'.$i.'_key'] = $key;
@@ -399,6 +407,11 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['spark'.$i.'_count'] = (string) $spark_json['count'];
             $data['spark'.$i.'_error'] = $spark_json['error'];
             $data['spark'.$i.'_items'] = $spark_json['items'];
+
+            $data['spark'.$i.'_item1_label'] = $item1_label;
+            $data['spark'.$i.'_item1_value'] = $this->formatGeneric($item1['text']);
+            $data['spark'.$i.'_item2_label'] = $item2_label;
+            $data['spark'.$i.'_item2_value'] = $this->formatGeneric($item2['text']);
         }
 
         $this->setResponse(new CControllerResponseData($data));
