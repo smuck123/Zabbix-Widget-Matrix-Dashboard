@@ -202,6 +202,70 @@ class WidgetView extends CControllerDashboardWidgetView {
         return ['text' => $raw, 'class' => 'neutral'];
     }
 
+    private function buildIpHostMap(): array {
+        $map = [];
+
+        $hosts = \API::Host()->get([
+            'output' => ['hostid', 'host', 'name'],
+            'selectInterfaces' => ['ip'],
+            'monitored_hosts' => true
+        ]);
+
+        foreach ($hosts as $host) {
+            $hostname = trim((string) ($host['name'] ?? $host['host'] ?? ''));
+
+            if ($hostname === '' || empty($host['interfaces']) || !is_array($host['interfaces'])) {
+                continue;
+            }
+
+            foreach ($host['interfaces'] as $interface) {
+                $ip = trim((string) ($interface['ip'] ?? ''));
+
+                if ($ip === '' || filter_var($ip, FILTER_VALIDATE_IP) === false) {
+                    continue;
+                }
+
+                if (!array_key_exists($ip, $map)) {
+                    $map[$ip] = $hostname;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    private function isPrivateOrLocalIp(string $ip): bool {
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            return false;
+        }
+
+        if (strpos($ip, ':') !== false) {
+            return (bool) preg_match('/^(::1|fc|fd|fe8|fe9|fea|feb)/i', $ip);
+        }
+
+        if ($ip === '127.0.0.1') {
+            return true;
+        }
+
+        if (preg_match('/^10\./', $ip)) {
+            return true;
+        }
+
+        if (preg_match('/^192\.168\./', $ip)) {
+            return true;
+        }
+
+        if (preg_match('/^172\.(1[6-9]|2[0-9]|3[0-1])\./', $ip)) {
+            return true;
+        }
+
+        if (preg_match('/^169\.254\./', $ip)) {
+            return true;
+        }
+
+        return false;
+    }
+
     private function parseSparkJson(string $json, int $max = 12): array {
         $result = [
             'count' => 0,
@@ -227,11 +291,28 @@ class WidgetView extends CControllerDashboardWidgetView {
         }
 
         $items = array_slice($decoded['data'], 0, max(1, $max));
+        $ip_host_map = $this->buildIpHostMap();
 
         foreach ($items as $item) {
             $process = trim((string) ($item['process'] ?? 'proc'));
             $ip = trim((string) ($item['r_ip'] ?? 'unknown'));
             $port = trim((string) ($item['r_port'] ?? ''));
+            $display_host = '';
+
+            if ($this->isPrivateOrLocalIp($ip) && array_key_exists($ip, $ip_host_map)) {
+                $display_host = $ip_host_map[$ip];
+            }
+
+            $display_endpoint = $ip;
+
+            if ($display_host !== '') {
+                $display_endpoint = $display_host.' ('.$ip.')';
+            }
+
+            if ($port !== '') {
+                $display_endpoint .= ':'.$port;
+            }
+
             $label = $process.' '.$ip;
             if ($port !== '') {
                 $label .= ':'.$port;
@@ -241,7 +322,9 @@ class WidgetView extends CControllerDashboardWidgetView {
                 'process' => $process,
                 'ip' => $ip,
                 'port' => $port,
-                'label' => $label
+                'label' => $label,
+                'display_host' => $display_host,
+                'display_endpoint' => $display_endpoint
             ];
         }
 

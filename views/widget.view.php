@@ -684,8 +684,10 @@ for ($i = 1; $i <= $spark_count; $i++) {
                     break;
                 }
 
+                $item_text = trim((string) ($entry['process'] ?? 'proc')).' '.trim((string) ($entry['display_endpoint'] ?? ''));
+
                 $box->addItem(
-                    (new CDiv($shortText($entry['label'] ?? '', 34)))
+                    (new CDiv($shortText($item_text, 44)))
                         ->addClass('mf-spark-group-item')
                 );
             }
