@@ -6,6 +6,7 @@ window.matrix_firewall_form = new class {
         const maxLinks = 30;
         const maxExtras = 10;
         const maxStatus = 10;
+        const maxMatrix = 20;
 
         const findField = (name) => {
             return document.querySelector('[name="' + name + '"]')
@@ -14,17 +15,13 @@ window.matrix_firewall_form = new class {
         };
 
         const getFieldRow = (el) => {
-            if (!el) {
-                return null;
-            }
+            if (!el) return null;
 
             let cur = el;
-
             while (cur) {
                 if (cur.matches?.('li, tr, .form-field, .fields-group, .widget-field, .dashboard-widget-field')) {
                     return cur;
                 }
-
                 cur = cur.parentElement;
             }
 
@@ -42,10 +39,7 @@ window.matrix_firewall_form = new class {
 
         const getIntValue = (name, fallback = 0) => {
             const el = findField(name);
-
-            if (!el) {
-                return fallback;
-            }
+            if (!el) return fallback;
 
             const v = parseInt(el.value || fallback, 10);
             return Number.isNaN(v) ? fallback : v;
@@ -57,11 +51,12 @@ window.matrix_firewall_form = new class {
             const linkCount = getIntValue('link_count', 0);
             const extraCount = getIntValue('extra_count', 0);
             const statusCount = getIntValue('status_count', 0);
+            const matrixCount = getIntValue('matrix_value_count', 0);
 
             for (let i = 1; i <= maxNodes; i++) {
                 const visible = i <= nodeCount;
-
                 showField('node' + i + '_label', visible);
+                showField('node' + i + '_type', visible);
                 showField('node' + i + '_host', visible);
                 showField('node' + i + '_x', visible && layoutMode === 1);
                 showField('node' + i + '_y', visible && layoutMode === 1);
@@ -71,10 +66,11 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxLinks; i++) {
                 const visible = i <= linkCount;
-
                 showField('link' + i + '_label', visible);
                 showField('link' + i + '_from', visible);
                 showField('link' + i + '_to', visible);
+                showField('link' + i + '_style', visible);
+                showField('link' + i + '_show_label', visible);
                 showField('link' + i + '_in_host', visible);
                 showField('link' + i + '_in_key', visible);
                 showField('link' + i + '_out_host', visible);
@@ -87,7 +83,6 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxExtras; i++) {
                 const visible = i <= extraCount;
-
                 showField('extra' + i + '_label', visible);
                 showField('extra' + i + '_host', visible);
                 showField('extra' + i + '_key', visible);
@@ -95,7 +90,6 @@ window.matrix_firewall_form = new class {
 
             for (let i = 1; i <= maxStatus; i++) {
                 const visible = i <= statusCount;
-
                 showField('status' + i + '_label', visible);
                 showField('status' + i + '_host', visible);
                 showField('status' + i + '_key', visible);
@@ -104,27 +98,26 @@ window.matrix_firewall_form = new class {
                 showField('status' + i + '_warn', visible);
                 showField('status' + i + '_crit', visible);
             }
+
+            for (let i = 1; i <= maxMatrix; i++) {
+                const visible = i <= matrixCount;
+                showField('matrix' + i + '_label', visible);
+                showField('matrix' + i + '_host', visible);
+                showField('matrix' + i + '_key', visible);
+                showField('matrix' + i + '_static', visible);
+            }
         };
 
         document.addEventListener('change', (e) => {
             const name = e.target?.getAttribute('name') || '';
 
             if (
-                name === 'layout_mode'
-                || name === 'fields[layout_mode]'
-                || name.endsWith('[layout_mode]')
-                || name === 'node_count'
-                || name === 'fields[node_count]'
-                || name.endsWith('[node_count]')
-                || name === 'link_count'
-                || name === 'fields[link_count]'
-                || name.endsWith('[link_count]')
-                || name === 'extra_count'
-                || name === 'fields[extra_count]'
-                || name.endsWith('[extra_count]')
-                || name === 'status_count'
-                || name === 'fields[status_count]'
-                || name.endsWith('[status_count]')
+                name.includes('layout_mode')
+                || name.includes('node_count')
+                || name.includes('link_count')
+                || name.includes('extra_count')
+                || name.includes('status_count')
+                || name.includes('matrix_value_count')
             ) {
                 refresh();
             }

@@ -13,6 +13,7 @@ class WidgetForm extends CWidgetForm {
     public const MAX_LINKS = 30;
     public const MAX_EXTRAS = 10;
     public const MAX_STATUS = 10;
+    public const MAX_MATRIX_VALUES = 20;
 
     public const LAYOUT_AUTO = 0;
     public const LAYOUT_MANUAL = 1;
@@ -23,6 +24,24 @@ class WidgetForm extends CWidgetForm {
     public const STATUS_MODE_RAW = 0;
     public const STATUS_MODE_GOODBAD = 1;
     public const STATUS_MODE_OKWARNCRIT = 2;
+
+    public const LINK_STYLE_ELBOW = 0;
+    public const LINK_STYLE_STRAIGHT = 1;
+    public const LINK_STYLE_CURVED = 2;
+
+    public const NODE_TYPE_GENERIC = 0;
+    public const NODE_TYPE_FIREWALL = 1;
+    public const NODE_TYPE_CLOUD = 2;
+    public const NODE_TYPE_SERVER = 3;
+    public const NODE_TYPE_OFFICE = 4;
+    public const NODE_TYPE_EXPRESSROUTE = 5;
+    public const NODE_TYPE_INTERNET = 6;
+    public const NODE_TYPE_DATACENTER = 7;
+    public const NODE_TYPE_DATABASE = 8;
+
+    public const MATRIX_SPEED_SLOW = 0;
+    public const MATRIX_SPEED_NORMAL = 1;
+    public const MATRIX_SPEED_FAST = 2;
 
     private function getNumberOptions(int $min, int $max): array {
         $options = [];
@@ -87,240 +106,114 @@ class WidgetForm extends CWidgetForm {
         ];
     }
 
+    private function getLinkStyleOptions(): array {
+        return [
+            self::LINK_STYLE_ELBOW => 'Elbow',
+            self::LINK_STYLE_STRAIGHT => 'Straight',
+            self::LINK_STYLE_CURVED => 'Curved'
+        ];
+    }
+
+    private function getYesNoOptions(): array {
+        return [
+            0 => 'No',
+            1 => 'Yes'
+        ];
+    }
+
+    private function getNodeTypeOptions(): array {
+        return [
+            self::NODE_TYPE_GENERIC => 'Generic',
+            self::NODE_TYPE_FIREWALL => 'Firewall',
+            self::NODE_TYPE_CLOUD => 'Cloud',
+            self::NODE_TYPE_SERVER => 'Server',
+            self::NODE_TYPE_OFFICE => 'Office',
+            self::NODE_TYPE_EXPRESSROUTE => 'ExpressRoute',
+            self::NODE_TYPE_INTERNET => 'Internet',
+            self::NODE_TYPE_DATACENTER => 'Datacenter',
+            self::NODE_TYPE_DATABASE => 'Database'
+        ];
+    }
+
+    private function getMatrixSpeedOptions(): array {
+        return [
+            self::MATRIX_SPEED_SLOW => 'Slow',
+            self::MATRIX_SPEED_NORMAL => 'Normal',
+            self::MATRIX_SPEED_FAST => 'Fast'
+        ];
+    }
+
     public function addFields(): self {
         $host_options = $this->getHostOptions();
         $node_options = $this->getNodeOptions();
         $status_modes = $this->getStatusModeOptions();
+        $link_styles = $this->getLinkStyleOptions();
+        $yesno = $this->getYesNoOptions();
+        $node_types = $this->getNodeTypeOptions();
+        $matrix_speeds = $this->getMatrixSpeedOptions();
 
         $this
-            ->addField(
-                (new CWidgetFieldSelect(
-                    'layout_mode',
-                    'Layout mode',
-                    $this->getLayoutOptions()
-                ))->setDefault(self::LAYOUT_AUTO)
-            )
-            ->addField(
-                (new CWidgetFieldSelect(
-                    'demo_mode',
-                    'Fallback mode',
-                    $this->getDemoOptions()
-                ))->setDefault(self::DEMO_OFF)
-            )
-            ->addField(
-                (new CWidgetFieldSelect(
-                    'node_count',
-                    'How many nodes to show',
-                    $this->getNumberOptions(1, self::MAX_NODES)
-                ))->setDefault(3)
-            )
-            ->addField(
-                (new CWidgetFieldSelect(
-                    'link_count',
-                    'How many links to show',
-                    $this->getNumberOptions(0, self::MAX_LINKS)
-                ))->setDefault(1)
-            )
-            ->addField(
-                (new CWidgetFieldSelect(
-                    'extra_count',
-                    'Extra items to show',
-                    $this->getNumberOptions(0, self::MAX_EXTRAS)
-                ))->setDefault(0)
-            )
-            ->addField(
-                (new CWidgetFieldSelect(
-                    'status_count',
-                    'Status items to show',
-                    $this->getNumberOptions(0, self::MAX_STATUS)
-                ))->setDefault(0)
-            );
+            ->addField((new CWidgetFieldSelect('layout_mode', 'Layout mode', $this->getLayoutOptions()))->setDefault(self::LAYOUT_AUTO))
+            ->addField((new CWidgetFieldSelect('demo_mode', 'Fallback mode', $this->getDemoOptions()))->setDefault(self::DEMO_OFF))
+            ->addField((new CWidgetFieldSelect('matrix_speed', 'Matrix rain speed', $matrix_speeds))->setDefault(self::MATRIX_SPEED_NORMAL))
+            ->addField((new CWidgetFieldSelect('node_count', 'How many nodes to show', $this->getNumberOptions(1, self::MAX_NODES)))->setDefault(3))
+            ->addField((new CWidgetFieldSelect('link_count', 'How many links to show', $this->getNumberOptions(0, self::MAX_LINKS)))->setDefault(1))
+            ->addField((new CWidgetFieldSelect('extra_count', 'Extra items to show', $this->getNumberOptions(0, self::MAX_EXTRAS)))->setDefault(0))
+            ->addField((new CWidgetFieldSelect('status_count', 'Status items to show', $this->getNumberOptions(0, self::MAX_STATUS)))->setDefault(0))
+            ->addField((new CWidgetFieldSelect('matrix_value_count', 'Matrix background values', $this->getNumberOptions(0, self::MAX_MATRIX_VALUES)))->setDefault(8));
 
         for ($i = 1; $i <= self::MAX_NODES; $i++) {
             $this
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'node'.$i.'_label',
-                        'Node '.$i.' label'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'node'.$i.'_host',
-                        'Node '.$i.' host',
-                        $host_options
-                    ))->setDefault(0)
-                )
-                ->addField(
-                    (new CWidgetFieldIntegerBox(
-                        'node'.$i.'_x',
-                        'Node '.$i.' X %'
-                    ))->setDefault(10)
-                )
-                ->addField(
-                    (new CWidgetFieldIntegerBox(
-                        'node'.$i.'_y',
-                        'Node '.$i.' Y %'
-                    ))->setDefault(10)
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'node'.$i.'_cpu_key',
-                        'Node '.$i.' CPU item key'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'node'.$i.'_mem_key',
-                        'Node '.$i.' Memory item key'
-                    ))->setDefault('')
-                );
+                ->addField((new CWidgetFieldTextBox('node'.$i.'_label', 'Node '.$i.' label'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('node'.$i.'_type', 'Node '.$i.' type', $node_types))->setDefault(self::NODE_TYPE_GENERIC))
+                ->addField((new CWidgetFieldSelect('node'.$i.'_host', 'Node '.$i.' host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldIntegerBox('node'.$i.'_x', 'Node '.$i.' X %'))->setDefault(10))
+                ->addField((new CWidgetFieldIntegerBox('node'.$i.'_y', 'Node '.$i.' Y %'))->setDefault(10))
+                ->addField((new CWidgetFieldTextBox('node'.$i.'_cpu_key', 'Node '.$i.' CPU item key'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('node'.$i.'_mem_key', 'Node '.$i.' Memory item key'))->setDefault(''));
         }
 
         for ($i = 1; $i <= self::MAX_LINKS; $i++) {
             $this
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'link'.$i.'_label',
-                        'Link '.$i.' label'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'link'.$i.'_from',
-                        'Link '.$i.' from node',
-                        $node_options
-                    ))->setDefault(1)
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'link'.$i.'_to',
-                        'Link '.$i.' to node',
-                        $node_options
-                    ))->setDefault(2)
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'link'.$i.'_in_host',
-                        'Link '.$i.' IN host',
-                        $host_options
-                    ))->setDefault(0)
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'link'.$i.'_in_key',
-                        'Link '.$i.' IN item key'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'link'.$i.'_out_host',
-                        'Link '.$i.' OUT host',
-                        $host_options
-                    ))->setDefault(0)
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'link'.$i.'_out_key',
-                        'Link '.$i.' OUT item key'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'link'.$i.'_health_host',
-                        'Link '.$i.' health host',
-                        $host_options
-                    ))->setDefault(0)
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'link'.$i.'_loss_key',
-                        'Link '.$i.' loss item key'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'link'.$i.'_latency_key',
-                        'Link '.$i.' latency item key'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'link'.$i.'_errors_key',
-                        'Link '.$i.' errors item key'
-                    ))->setDefault('')
-                );
+                ->addField((new CWidgetFieldTextBox('link'.$i.'_label', 'Link '.$i.' label'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_from', 'Link '.$i.' from node', $node_options))->setDefault(1))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_to', 'Link '.$i.' to node', $node_options))->setDefault(2))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_style', 'Link '.$i.' route style', $link_styles))->setDefault(self::LINK_STYLE_ELBOW))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_show_label', 'Link '.$i.' show label', $yesno))->setDefault(1))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_in_host', 'Link '.$i.' IN host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldTextBox('link'.$i.'_in_key', 'Link '.$i.' IN item key'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_out_host', 'Link '.$i.' OUT host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldTextBox('link'.$i.'_out_key', 'Link '.$i.' OUT item key'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('link'.$i.'_health_host', 'Link '.$i.' health host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldTextBox('link'.$i.'_loss_key', 'Link '.$i.' loss item key'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('link'.$i.'_latency_key', 'Link '.$i.' latency item key'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('link'.$i.'_errors_key', 'Link '.$i.' errors item key'))->setDefault(''));
         }
 
         for ($i = 1; $i <= self::MAX_EXTRAS; $i++) {
             $this
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'extra'.$i.'_label',
-                        'Extra '.$i.' label'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'extra'.$i.'_host',
-                        'Extra '.$i.' host',
-                        $host_options
-                    ))->setDefault(0)
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'extra'.$i.'_key',
-                        'Extra '.$i.' item key'
-                    ))->setDefault('')
-                );
+                ->addField((new CWidgetFieldTextBox('extra'.$i.'_label', 'Extra '.$i.' label'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('extra'.$i.'_host', 'Extra '.$i.' host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldTextBox('extra'.$i.'_key', 'Extra '.$i.' item key'))->setDefault(''));
         }
 
         for ($i = 1; $i <= self::MAX_STATUS; $i++) {
             $this
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'status'.$i.'_label',
-                        'Status '.$i.' label'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'status'.$i.'_host',
-                        'Status '.$i.' host',
-                        $host_options
-                    ))->setDefault(0)
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'status'.$i.'_key',
-                        'Status '.$i.' item key'
-                    ))->setDefault('')
-                )
-                ->addField(
-                    (new CWidgetFieldSelect(
-                        'status'.$i.'_mode',
-                        'Status '.$i.' mode',
-                        $status_modes
-                    ))->setDefault(self::STATUS_MODE_RAW)
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'status'.$i.'_good',
-                        'Status '.$i.' good value'
-                    ))->setDefault('1')
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'status'.$i.'_warn',
-                        'Status '.$i.' warning value'
-                    ))->setDefault('2')
-                )
-                ->addField(
-                    (new CWidgetFieldTextBox(
-                        'status'.$i.'_crit',
-                        'Status '.$i.' critical value'
-                    ))->setDefault('3')
-                );
+                ->addField((new CWidgetFieldTextBox('status'.$i.'_label', 'Status '.$i.' label'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('status'.$i.'_host', 'Status '.$i.' host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldTextBox('status'.$i.'_key', 'Status '.$i.' item key'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('status'.$i.'_mode', 'Status '.$i.' mode', $status_modes))->setDefault(self::STATUS_MODE_RAW))
+                ->addField((new CWidgetFieldTextBox('status'.$i.'_good', 'Status '.$i.' good value'))->setDefault('1'))
+                ->addField((new CWidgetFieldTextBox('status'.$i.'_warn', 'Status '.$i.' warning value'))->setDefault('2'))
+                ->addField((new CWidgetFieldTextBox('status'.$i.'_crit', 'Status '.$i.' critical value'))->setDefault('3'));
+        }
+
+        for ($i = 1; $i <= self::MAX_MATRIX_VALUES; $i++) {
+            $this
+                ->addField((new CWidgetFieldTextBox('matrix'.$i.'_label', 'Matrix '.$i.' prefix text'))->setDefault(''))
+                ->addField((new CWidgetFieldSelect('matrix'.$i.'_host', 'Matrix '.$i.' host', $host_options))->setDefault(0))
+                ->addField((new CWidgetFieldTextBox('matrix'.$i.'_key', 'Matrix '.$i.' item key'))->setDefault(''))
+                ->addField((new CWidgetFieldTextBox('matrix'.$i.'_static', 'Matrix '.$i.' static text'))->setDefault(''));
         }
 
         return $this;

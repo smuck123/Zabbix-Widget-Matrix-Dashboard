@@ -35,40 +35,23 @@ class WidgetView extends CControllerDashboardWidgetView {
     private function formatTraffic(string $value): string {
         $num = (float) $value;
 
-        if ($num >= 1000000000) {
-            return round($num / 1000000000, 2).' Gbps';
-        }
-
-        if ($num >= 1000000) {
-            return round($num / 1000000, 1).' Mbps';
-        }
-
-        if ($num >= 1000) {
-            return round($num / 1000, 1).' Kbps';
-        }
+        if ($num >= 1000000000) return round($num / 1000000000, 2).' Gbps';
+        if ($num >= 1000000) return round($num / 1000000, 1).' Mbps';
+        if ($num >= 1000) return round($num / 1000, 1).' Kbps';
 
         return round($num, 0).' bps';
     }
 
     private function formatGeneric(string $value): string {
         $value = trim((string) $value);
-
-        if ($value === '') {
-            return '';
-        }
+        if ($value === '') return '';
 
         if (is_numeric($value)) {
             $num = (float) $value;
 
-            if (abs($num) >= 1000000000) {
-                return round($num / 1000000000, 2).'G';
-            }
-            if (abs($num) >= 1000000) {
-                return round($num / 1000000, 2).'M';
-            }
-            if (abs($num) >= 1000) {
-                return round($num / 1000, 2).'K';
-            }
+            if (abs($num) >= 1000000000) return round($num / 1000000000, 2).'G';
+            if (abs($num) >= 1000000) return round($num / 1000000, 2).'M';
+            if (abs($num) >= 1000) return round($num / 1000, 2).'K';
 
             return (string) round($num, 2);
         }
@@ -188,26 +171,14 @@ class WidgetView extends CControllerDashboardWidgetView {
         }
 
         if ($mode === WidgetForm::STATUS_MODE_GOODBAD) {
-            if ($raw === $good) {
-                return ['text' => 'Good', 'class' => 'good'];
-            }
-
+            if ($raw === $good) return ['text' => 'Good', 'class' => 'good'];
             return ['text' => 'Bad', 'class' => 'bad'];
         }
 
         if ($mode === WidgetForm::STATUS_MODE_OKWARNCRIT) {
-            if ($raw === $good) {
-                return ['text' => 'OK', 'class' => 'good'];
-            }
-
-            if ($raw === $warn) {
-                return ['text' => 'Warning', 'class' => 'warn'];
-            }
-
-            if ($raw === $crit) {
-                return ['text' => 'Critical', 'class' => 'bad'];
-            }
-
+            if ($raw === $good) return ['text' => 'OK', 'class' => 'good'];
+            if ($raw === $warn) return ['text' => 'Warning', 'class' => 'warn'];
+            if ($raw === $crit) return ['text' => 'Critical', 'class' => 'bad'];
             return ['text' => $raw, 'class' => 'neutral'];
         }
 
@@ -225,16 +196,19 @@ class WidgetView extends CControllerDashboardWidgetView {
             'name' => $this->getInput('name', 'Matrix Firewall'),
             'layout_mode' => $this->getField($fields, $inputs, 'layout_mode', '0'),
             'demo_mode' => $this->getField($fields, $inputs, 'demo_mode', '0'),
+            'matrix_speed' => $this->getField($fields, $inputs, 'matrix_speed', '1'),
             'node_count' => $this->getField($fields, $inputs, 'node_count', '5'),
             'link_count' => $this->getField($fields, $inputs, 'link_count', '3'),
             'extra_count' => $this->getField($fields, $inputs, 'extra_count', '0'),
-            'status_count' => $this->getField($fields, $inputs, 'status_count', '0')
+            'status_count' => $this->getField($fields, $inputs, 'status_count', '0'),
+            'matrix_value_count' => $this->getField($fields, $inputs, 'matrix_value_count', '8')
         ];
 
         for ($i = 1; $i <= WidgetForm::MAX_NODES; $i++) {
             $node_hostid = $this->getField($fields, $inputs, 'node'.$i.'_host', '0');
 
             $data['node'.$i.'_label'] = $this->getField($fields, $inputs, 'node'.$i.'_label', '');
+            $data['node'.$i.'_type'] = $this->getField($fields, $inputs, 'node'.$i.'_type', '0');
             $data['node'.$i.'_hostid'] = $node_hostid;
             $data['node'.$i.'_host'] = $this->hostIdToName($node_hostid);
             $data['node'.$i.'_x'] = $this->getField($fields, $inputs, 'node'.$i.'_x', '10');
@@ -259,6 +233,8 @@ class WidgetView extends CControllerDashboardWidgetView {
             $data['link'.$i.'_label'] = $this->getField($fields, $inputs, 'link'.$i.'_label', '');
             $data['link'.$i.'_from'] = $this->getField($fields, $inputs, 'link'.$i.'_from', '1');
             $data['link'.$i.'_to'] = $this->getField($fields, $inputs, 'link'.$i.'_to', '2');
+            $data['link'.$i.'_style'] = $this->getField($fields, $inputs, 'link'.$i.'_style', '0');
+            $data['link'.$i.'_show_label'] = $this->getField($fields, $inputs, 'link'.$i.'_show_label', '1');
 
             $data['link'.$i.'_in_host'] = $this->hostIdToName($in_hostid);
             $data['link'.$i.'_out_host'] = $this->hostIdToName($out_hostid);
@@ -321,6 +297,18 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['status'.$i.'_value'] = $status['text'];
             $data['status'.$i.'_class'] = $status['class'];
+        }
+
+        for ($i = 1; $i <= WidgetForm::MAX_MATRIX_VALUES; $i++) {
+            $hostid = $this->getField($fields, $inputs, 'matrix'.$i.'_host', '0');
+
+            $data['matrix'.$i.'_label'] = $this->getField($fields, $inputs, 'matrix'.$i.'_label', '');
+            $data['matrix'.$i.'_host'] = $this->hostIdToName($hostid);
+            $data['matrix'.$i.'_key'] = $this->getField($fields, $inputs, 'matrix'.$i.'_key', '');
+            $data['matrix'.$i.'_static'] = $this->getField($fields, $inputs, 'matrix'.$i.'_static', '');
+
+            $matrix_value = $this->getLatestRawByHostId($hostid, $data['matrix'.$i.'_key'], $allow_random);
+            $data['matrix'.$i.'_value'] = $this->formatGeneric($matrix_value['text']);
         }
 
         $this->setResponse(new CControllerResponseData($data));

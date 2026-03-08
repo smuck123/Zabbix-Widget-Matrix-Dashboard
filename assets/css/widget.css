@@ -47,21 +47,10 @@
     box-shadow: inset 0 0 6px rgba(70, 255, 130, 0.04);
 }
 
-.mf-status-good {
-    border-color: rgba(107, 255, 158, 0.55);
-}
-
-.mf-status-warn {
-    border-color: rgba(255, 216, 77, 0.55);
-}
-
-.mf-status-bad {
-    border-color: rgba(255, 95, 95, 0.60);
-}
-
-.mf-status-neutral {
-    border-color: rgba(150, 180, 170, 0.35);
-}
+.mf-status-good { border-color: rgba(107, 255, 158, 0.55); }
+.mf-status-warn { border-color: rgba(255, 216, 77, 0.55); }
+.mf-status-bad { border-color: rgba(255, 95, 95, 0.60); }
+.mf-status-neutral { border-color: rgba(150, 180, 170, 0.35); }
 
 .mf-status-chip-label {
     font-size: 11px;
@@ -112,15 +101,6 @@
     animation-iteration-count: infinite;
 }
 
-.mf-col-1 { animation-duration: 12s; }
-.mf-col-2 { animation-duration: 8s; }
-.mf-col-3 { animation-duration: 10s; }
-.mf-col-4 { animation-duration: 14s; }
-.mf-col-5 { animation-duration: 9s; }
-.mf-col-6 { animation-duration: 13s; }
-.mf-col-7 { animation-duration: 11s; }
-.mf-col-8 { animation-duration: 15s; }
-
 @keyframes mf-fall {
     0% { transform: translateY(-130%); }
     100% { transform: translateY(130%); }
@@ -139,10 +119,13 @@
 .mf-svg-glow {
     filter: blur(6px);
     opacity: 0.22;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .mf-svg-line {
     stroke-linecap: round;
+    stroke-linejoin: round;
     filter: drop-shadow(0 0 6px rgba(140, 255, 200, 0.45));
 }
 
@@ -204,8 +187,8 @@
 
 .mf-node {
     position: absolute;
-    width: 150px;
-    min-height: 84px;
+    width: 170px;
+    min-height: 88px;
     padding: 10px;
     box-sizing: border-box;
     border: 1px solid rgba(90, 220, 140, 0.36);
@@ -228,8 +211,21 @@
 .mf-node-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
+}
+
+.mf-node-icon {
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(20, 60, 40, 0.70);
+    border: 1px solid rgba(90, 220, 140, 0.22);
+    font-size: 14px;
+    line-height: 1;
 }
 
 .mf-node-title {
@@ -262,11 +258,6 @@
     color: #e7fff0;
     background: rgba(20, 60, 40, 0.70);
     border: 1px solid rgba(90, 220, 140, 0.16);
-}
-
-.mf-node-placeholder {
-    font-size: 14px;
-    color: #7db18d;
 }
 
 .mf-legend {
@@ -313,7 +304,7 @@
 
 @media (max-width: 1200px) {
     .mf-node {
-        width: 135px;
+        width: 150px;
     }
 
     .mf-link-label {
