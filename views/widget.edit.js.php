@@ -105,6 +105,7 @@ window.matrix_firewall_form = new class {
                 showField('link' + i + '_to', visible);
                 showField('link' + i + '_style', visible);
                 showField('link' + i + '_show_label', visible);
+                showField('link' + i + '_label_theme', visible);
                 showField('link' + i + '_drilldown', visible);
                 showField('link' + i + '_in_host', visible);
                 showField('link' + i + '_in_key', visible);
