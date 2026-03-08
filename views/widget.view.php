@@ -181,40 +181,6 @@ $getTrafficStyle = static function(float $traffic): array {
     ];
 };
 
-$getLinkLabelTheme = static function(int $selected_theme, string $in_key, string $out_key, string $loss_key, string $latency_key, string $errors_key): int {
-    if ($selected_theme !== WidgetForm::LINK_LABEL_THEME_DEFAULT) {
-        return $selected_theme;
-    }
-
-    $all_keys = strtolower($in_key.' '.$out_key.' '.$loss_key.' '.$latency_key.' '.$errors_key);
-
-    if ($all_keys === '') {
-        return WidgetForm::LINK_LABEL_THEME_DEFAULT;
-    }
-
-    if (strpos($all_keys, 'vpn') !== false || strpos($all_keys, 'tunnel') !== false || strpos($all_keys, 'ipsec') !== false) {
-        return WidgetForm::LINK_LABEL_THEME_HUD;
-    }
-
-    if (strpos($all_keys, 'error') !== false || strpos($all_keys, 'drop') !== false || strpos($all_keys, 'reject') !== false) {
-        return WidgetForm::LINK_LABEL_THEME_TACTICAL;
-    }
-
-    if (strpos($all_keys, 'latency') !== false || strpos($all_keys, 'ping') !== false || strpos($all_keys, 'rtt') !== false) {
-        return WidgetForm::LINK_LABEL_THEME_CLOUD;
-    }
-
-    if (strpos($all_keys, 'loss') !== false || strpos($all_keys, 'jitter') !== false) {
-        return WidgetForm::LINK_LABEL_THEME_DOTLINE;
-    }
-
-    if (strpos($all_keys, 'bps') !== false || strpos($all_keys, 'bit') !== false || strpos($all_keys, 'traffic') !== false || strpos($all_keys, 'ifhc') !== false) {
-        return WidgetForm::LINK_LABEL_THEME_TRAFFIC;
-    }
-
-    return WidgetForm::LINK_LABEL_THEME_DEFAULT;
-};
-
 $getMidPointOnPolyline = static function(array $points): array {
     $segments = [];
     $total = 0.0;
@@ -469,7 +435,6 @@ for ($i = 1; $i <= $link_count; $i++) {
     $has_error = (($data['link'.$i.'_has_error'] ?? '0') === '1');
     $route_style = $clampInt($data['link'.$i.'_style'] ?? 0, WidgetForm::LINK_STYLE_ELBOW, WidgetForm::LINK_STYLE_ZIGZAG, WidgetForm::LINK_STYLE_ELBOW);
     $show_label = $clampInt($data['link'.$i.'_show_label'] ?? 1, 0, 1, 1) === 1;
-    $selected_label_theme = $clampInt($data['link'.$i.'_label_theme'] ?? WidgetForm::LINK_LABEL_THEME_DEFAULT, WidgetForm::LINK_LABEL_THEME_DEFAULT, WidgetForm::LINK_LABEL_THEME_HUD, WidgetForm::LINK_LABEL_THEME_DEFAULT);
     $in_hostid = $normalizeId($data['link'.$i.'_in_hostid'] ?? '');
     $out_hostid = $normalizeId($data['link'.$i.'_out_hostid'] ?? '');
     $health_hostid = $normalizeId($data['link'.$i.'_health_hostid'] ?? '');
@@ -698,9 +663,7 @@ for ($i = 1; $i <= $link_count; $i++) {
     if ($show_label) {
         [$mx, $my] = $getMidPointOnPolyline($label_points);
 
-        $resolved_theme = $getLinkLabelTheme($selected_label_theme, $in_key, $out_key, $loss_key, $latency_key, $errors_key);
-
-        $label_box = (new CDiv())->addClass('mf-link-label mf-link-label-theme-'.$resolved_theme.($has_error ? ' mf-link-label-error' : ''));
+        $label_box = (new CDiv())->addClass('mf-link-label'.($has_error ? ' mf-link-label-error' : ''));
         $applyDrilldown($label_box, $link_url);
 
         if ($label !== '') {
@@ -722,11 +685,10 @@ for ($i = 1; $i <= $link_count; $i++) {
 
         $label_box->setAttribute(
             'style',
-            '--mf-link-color: '.$style['color'].'; --mf-label-dx: 0px; --mf-label-dy: 0px; left: calc('.round($mx / 10, 2).'%' .
-            ' - 74px + var(--mf-label-dx)); top: calc('.round($my / 7, 2).'%' .
-            ' - 24px + var(--mf-label-dy));'
+            '--mf-link-color: '.$style['color'].'; left: calc('.round($mx / 10, 2).'%' .
+            ' - 74px); top: calc('.round($my / 7, 2).'%' .
+            ' - 24px);'
         );
-        $label_box->setAttribute('data-mf-link-id', (string) $i);
 
         $link_labels_layer->addItem($label_box);
     }
@@ -1045,99 +1007,6 @@ for ($i = 1; $i <= $extra_count; $i++) {
     $extras->addItem($card);
 }
 
-
-$drag_script = <<<'JS'
-(function() {
-    const script = document.currentScript;
-    const root = script && script.previousElementSibling && script.previousElementSibling.classList.contains('mf-root')
-        ? script.previousElementSibling
-        : null;
-
-    if (!root) {
-        return;
-    }
-
-    const labels = root.querySelectorAll('.mf-link-label[data-mf-link-id]');
-
-    if (!labels.length) {
-        return;
-    }
-
-    const widgetContainer = root.closest('[data-widgetid]')
-        || root.closest('.dashboard-grid-widget')
-        || root.closest('[id]');
-    const widgetId = widgetContainer
-        ? (widgetContainer.getAttribute('data-widgetid') || widgetContainer.id || '')
-        : '';
-
-    const roots = Array.from(document.querySelectorAll('.mf-root'));
-    const rootIndex = roots.indexOf(root);
-    const storeScope = widgetId !== '' ? widgetId : (rootIndex >= 0 ? String(rootIndex) : '0');
-    const storeKey = 'mf-link-label-offsets-v3-' + storeScope;
-    let offsets = {};
-
-    try {
-        offsets = JSON.parse(sessionStorage.getItem(storeKey) || '{}') || {};
-    }
-    catch (e) {
-        offsets = {};
-    }
-
-    labels.forEach((label) => {
-        const id = label.getAttribute('data-mf-link-id');
-        const saved = offsets[id];
-
-        if (saved && Number.isFinite(saved.dx) && Number.isFinite(saved.dy)) {
-            label.style.setProperty('--mf-label-dx', saved.dx + 'px');
-            label.style.setProperty('--mf-label-dy', saved.dy + 'px');
-        }
-
-        let startX = 0;
-        let startY = 0;
-        let baseDX = saved && Number.isFinite(saved.dx) ? saved.dx : 0;
-        let baseDY = saved && Number.isFinite(saved.dy) ? saved.dy : 0;
-
-        const onMove = (event) => {
-            const dx = Math.round(baseDX + (event.clientX - startX));
-            const dy = Math.round(baseDY + (event.clientY - startY));
-
-            label.style.setProperty('--mf-label-dx', dx + 'px');
-            label.style.setProperty('--mf-label-dy', dy + 'px');
-            offsets[id] = {dx, dy};
-        };
-
-        const onUp = () => {
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
-
-            try {
-                sessionStorage.setItem(storeKey, JSON.stringify(offsets));
-            }
-            catch (e) {
-            }
-        };
-
-        label.addEventListener('pointerdown', (event) => {
-            if (event.button !== 0) {
-                return;
-            }
-
-            startX = event.clientX;
-            startY = event.clientY;
-            baseDX = offsets[id] && Number.isFinite(offsets[id].dx) ? offsets[id].dx : 0;
-            baseDY = offsets[id] && Number.isFinite(offsets[id].dy) ? offsets[id].dy : 0;
-
-            window.addEventListener('pointermove', onMove);
-            window.addEventListener('pointerup', onUp, {once: true});
-            event.preventDefault();
-        });
-    });
-})();
-JS;
-
-$script_tag = new CTag('script', true, $drag_script);
-$script_tag->setAttribute('type', 'text/javascript');
-
 $legend_text = (($data['demo_mode'] ?? '0') === '1')
     ? 'Demo fallback enabled: missing items use random values.'
     : 'High traffic = thicker line, hotter color, faster balls.';
@@ -1153,5 +1022,4 @@ $legend_text = (($data['demo_mode'] ?? '0') === '1')
             ->addItem((new CDiv($legend_text))->addClass('mf-legend'))
             ->addItem($extras)
     )
-    ->addItem($script_tag)
     ->show();

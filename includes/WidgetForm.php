@@ -40,27 +40,6 @@ class WidgetForm extends CWidgetForm {
     public const LINK_DRILLDOWN_LATEST = 2;
     public const LINK_DRILLDOWN_PROBLEMS = 3;
 
-    public const LINK_LABEL_THEME_DEFAULT = 0;
-    public const LINK_LABEL_THEME_DOTLINE = 1;
-    public const LINK_LABEL_THEME_MINIMAL = 2;
-    public const LINK_LABEL_THEME_COMPACT = 3;
-    public const LINK_LABEL_THEME_CHIP = 4;
-    public const LINK_LABEL_THEME_GLASS = 5;
-    public const LINK_LABEL_THEME_TERMINAL = 6;
-    public const LINK_LABEL_THEME_GRID = 7;
-    public const LINK_LABEL_THEME_PULSE = 8;
-    public const LINK_LABEL_THEME_NEON = 9;
-    public const LINK_LABEL_THEME_SOFT = 10;
-    public const LINK_LABEL_THEME_STEEL = 11;
-    public const LINK_LABEL_THEME_AMBER = 12;
-    public const LINK_LABEL_THEME_VIOLET = 13;
-    public const LINK_LABEL_THEME_CLOUD = 14;
-    public const LINK_LABEL_THEME_TRAFFIC = 15;
-    public const LINK_LABEL_THEME_FRAME = 16;
-    public const LINK_LABEL_THEME_TINY = 17;
-    public const LINK_LABEL_THEME_TACTICAL = 18;
-    public const LINK_LABEL_THEME_HUD = 19;
-
     public const NODE_TYPE_GENERIC = 0;
     public const NODE_TYPE_FIREWALL = 1;
     public const NODE_TYPE_CLOUD = 2;
@@ -182,31 +161,6 @@ class WidgetForm extends CWidgetForm {
         ];
     }
 
-    private function getLinkLabelThemeOptions(): array {
-        return [
-            self::LINK_LABEL_THEME_DEFAULT => 'Default',
-            self::LINK_LABEL_THEME_DOTLINE => 'Dot line',
-            self::LINK_LABEL_THEME_MINIMAL => 'Minimal',
-            self::LINK_LABEL_THEME_COMPACT => 'Compact',
-            self::LINK_LABEL_THEME_CHIP => 'Chip',
-            self::LINK_LABEL_THEME_GLASS => 'Glass',
-            self::LINK_LABEL_THEME_TERMINAL => 'Terminal',
-            self::LINK_LABEL_THEME_GRID => 'Grid',
-            self::LINK_LABEL_THEME_PULSE => 'Pulse',
-            self::LINK_LABEL_THEME_NEON => 'Neon',
-            self::LINK_LABEL_THEME_SOFT => 'Soft',
-            self::LINK_LABEL_THEME_STEEL => 'Steel',
-            self::LINK_LABEL_THEME_AMBER => 'Amber',
-            self::LINK_LABEL_THEME_VIOLET => 'Violet',
-            self::LINK_LABEL_THEME_CLOUD => 'Cloud',
-            self::LINK_LABEL_THEME_TRAFFIC => 'Traffic',
-            self::LINK_LABEL_THEME_FRAME => 'Frame',
-            self::LINK_LABEL_THEME_TINY => 'Tiny',
-            self::LINK_LABEL_THEME_TACTICAL => 'Tactical',
-            self::LINK_LABEL_THEME_HUD => 'HUD'
-        ];
-    }
-
     private function getNodeTypeOptions(): array {
         return [
             self::NODE_TYPE_GENERIC => 'Generic',
@@ -258,7 +212,6 @@ class WidgetForm extends CWidgetForm {
         $status_modes = $this->getStatusModeOptions();
         $link_styles = $this->getLinkStyleOptions();
         $link_drilldowns = $this->getLinkDrilldownOptions();
-        $link_label_themes = $this->getLinkLabelThemeOptions();
         $yesno = $this->getYesNoOptions();
         $node_types = $this->getNodeTypeOptions();
         $node_themes = $this->getNodeThemeOptions();
@@ -296,7 +249,6 @@ class WidgetForm extends CWidgetForm {
                 ->addField((new CWidgetFieldSelect('link'.$i.'_to', 'Link '.$i.' to node', $node_options))->setDefault(2))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_style', 'Link '.$i.' route style', $link_styles))->setDefault(self::LINK_STYLE_ELBOW))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_show_label', 'Link '.$i.' show label', $yesno))->setDefault(1))
-                ->addField((new CWidgetFieldSelect('link'.$i.'_label_theme', 'Link '.$i.' label theme', $link_label_themes))->setDefault(self::LINK_LABEL_THEME_DEFAULT))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_drilldown', 'Link '.$i.' click target', $link_drilldowns))->setDefault(self::LINK_DRILLDOWN_AUTO))
                 ->addField((new CWidgetFieldSelect('link'.$i.'_in_host', 'Link '.$i.' IN host', $host_options))->setDefault(0))
                 ->addField((new CWidgetFieldTextBox('link'.$i.'_in_key', 'Link '.$i.' IN item key'))->setDefault(''))
