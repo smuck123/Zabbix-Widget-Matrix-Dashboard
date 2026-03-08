@@ -704,14 +704,14 @@ for ($i = 1; $i <= $spark_count; $i++) {
         }
 
         $slot_positions = [
-            ['box_left' => 82,   'box_top' => -22,  'line_left' => 18,  'line_top' => 1,   'line_width' => 58, 'line_height' => 2,  'transform' => 'none'],
-            ['box_left' => 58,   'box_top' => -118, 'line_left' => 9,   'line_top' => -30, 'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'left center'],
-            ['box_left' => 58,   'box_top' => 62,   'line_left' => 9,   'line_top' => 31,  'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'left center'],
-            ['box_left' => -188, 'box_top' => -22,  'line_left' => -72, 'line_top' => 1,   'line_width' => 58, 'line_height' => 2,  'transform' => 'none'],
-            ['box_left' => -182, 'box_top' => -118, 'line_left' => -54, 'line_top' => -30, 'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'right center'],
-            ['box_left' => -182, 'box_top' => 62,   'line_left' => -54, 'line_top' => 31,  'line_width' => 62, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'right center'],
-            ['box_left' => -46,  'box_top' => -146, 'line_left' => -1,  'line_top' => -82, 'line_width' => 2,  'line_height' => 60, 'transform' => 'none'],
-            ['box_left' => -46,  'box_top' => 98,   'line_left' => -1,  'line_top' => 20,  'line_width' => 2,  'line_height' => 60, 'transform' => 'none']
+            ['box_left' => 110,  'box_top' => -44,  'line_left' => 16,  'line_top' => 1,   'line_width' => 84, 'line_height' => 2,  'transform' => 'none'],
+            ['box_left' => 90,   'box_top' => -184, 'line_left' => 8,   'line_top' => -34, 'line_width' => 88, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'left center'],
+            ['box_left' => 90,   'box_top' => 120,  'line_left' => 8,   'line_top' => 35,  'line_width' => 88, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'left center'],
+            ['box_left' => -214, 'box_top' => -44,  'line_left' => -98, 'line_top' => 1,   'line_width' => 84, 'line_height' => 2,  'transform' => 'none'],
+            ['box_left' => -194, 'box_top' => -184, 'line_left' => -80, 'line_top' => -34, 'line_width' => 88, 'line_height' => 2,  'transform' => 'rotate(35deg)', 'origin' => 'right center'],
+            ['box_left' => -194, 'box_top' => 120,  'line_left' => -80, 'line_top' => 35,  'line_width' => 88, 'line_height' => 2,  'transform' => 'rotate(-35deg)', 'origin' => 'right center'],
+            ['box_left' => -54,  'box_top' => -208, 'line_left' => -1,  'line_top' => -126, 'line_width' => 2, 'line_height' => 90, 'transform' => 'none'],
+            ['box_left' => -54,  'box_top' => 158,  'line_left' => -1,  'line_top' => 26,  'line_width' => 2,  'line_height' => 90, 'transform' => 'none']
         ];
 
         $slot_index = 0;
@@ -748,8 +748,8 @@ for ($i = 1; $i <= $spark_count; $i++) {
             foreach ($group['rows'] as $row) {
                 $shown++;
 
-                if ($shown > 6) {
-                    $remaining = count($group['rows']) - 6;
+                if ($shown > 4) {
+                    $remaining = count($group['rows']) - 4;
                     if ($remaining > 0) {
                         $box->addItem((new CDiv('+'.$remaining.' more'))->addClass('mf-spark-more'));
                     }
@@ -762,7 +762,7 @@ for ($i = 1; $i <= $spark_count; $i++) {
                 }
 
                 $box->addItem(
-                    (new CDiv($shortText($text, 34)))
+                    (new CDiv($shortText($text, 28)))
                         ->addClass('mf-spark-group-item')
                 );
             }
