@@ -45,6 +45,11 @@ class WidgetForm extends CWidgetForm {
     public const NODE_TYPE_DATACENTER = 7;
     public const NODE_TYPE_DATABASE = 8;
 
+    public const NODE_THEME_BOX = 0;
+    public const NODE_THEME_GLASS = 1;
+    public const NODE_THEME_TERMINAL = 2;
+    public const NODE_THEME_PILL = 3;
+
     public const MATRIX_SPEED_SLOW = 0;
     public const MATRIX_SPEED_NORMAL = 1;
     public const MATRIX_SPEED_FAST = 2;
@@ -155,6 +160,15 @@ class WidgetForm extends CWidgetForm {
         ];
     }
 
+    private function getNodeThemeOptions(): array {
+        return [
+            self::NODE_THEME_BOX => 'Box',
+            self::NODE_THEME_GLASS => 'Glass',
+            self::NODE_THEME_TERMINAL => 'Terminal',
+            self::NODE_THEME_PILL => 'Pill'
+        ];
+    }
+
     private function getMatrixSpeedOptions(): array {
         return [
             self::MATRIX_SPEED_SLOW => 'Slow',
@@ -180,6 +194,7 @@ class WidgetForm extends CWidgetForm {
         $link_drilldowns = $this->getLinkDrilldownOptions();
         $yesno = $this->getYesNoOptions();
         $node_types = $this->getNodeTypeOptions();
+        $node_themes = $this->getNodeThemeOptions();
         $matrix_speeds = $this->getMatrixSpeedOptions();
         $spark_grouping = $this->getSparkGroupingOptions();
 
@@ -198,6 +213,7 @@ class WidgetForm extends CWidgetForm {
             $this
                 ->addField((new CWidgetFieldTextBox('node'.$i.'_label', 'Node '.$i.' label'))->setDefault(''))
                 ->addField((new CWidgetFieldSelect('node'.$i.'_type', 'Node '.$i.' type', $node_types))->setDefault(self::NODE_TYPE_GENERIC))
+                ->addField((new CWidgetFieldSelect('node'.$i.'_theme', 'Node '.$i.' theme', $node_themes))->setDefault(self::NODE_THEME_BOX))
                 ->addField((new CWidgetFieldSelect('node'.$i.'_host', 'Node '.$i.' host', $host_options))->setDefault(0))
                 ->addField((new CWidgetFieldIntegerBox('node'.$i.'_x', 'Node '.$i.' X %'))->setDefault(10))
                 ->addField((new CWidgetFieldIntegerBox('node'.$i.'_y', 'Node '.$i.' Y %'))->setDefault(10))

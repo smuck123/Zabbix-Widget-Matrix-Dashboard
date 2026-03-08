@@ -341,6 +341,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
             $data['node'.$i.'_label'] = $this->getField($fields, $inputs, 'node'.$i.'_label', '');
             $data['node'.$i.'_type'] = $this->getField($fields, $inputs, 'node'.$i.'_type', '0');
+            $data['node'.$i.'_theme'] = $this->getField($fields, $inputs, 'node'.$i.'_theme', (string) WidgetForm::NODE_THEME_BOX);
             $data['node'.$i.'_hostid'] = $node_hostid;
             $data['node'.$i.'_host'] = $this->hostIdToName($node_hostid);
             $data['node'.$i.'_x'] = $this->getField($fields, $inputs, 'node'.$i.'_x', '10');

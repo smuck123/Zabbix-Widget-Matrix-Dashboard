@@ -26,6 +26,7 @@ for ($i = 1; $i <= WidgetForm::MAX_NODES; $i++) {
     $nodes_fieldset
         ->addField(new CWidgetFieldTextBoxView($data['fields']['node'.$i.'_label']))
         ->addField(new CWidgetFieldSelectView($data['fields']['node'.$i.'_type']))
+        ->addField(new CWidgetFieldSelectView($data['fields']['node'.$i.'_theme']))
         ->addField(new CWidgetFieldSelectView($data['fields']['node'.$i.'_host']))
         ->addField(new CWidgetFieldIntegerBoxView($data['fields']['node'.$i.'_x']))
         ->addField(new CWidgetFieldIntegerBoxView($data['fields']['node'.$i.'_y']))

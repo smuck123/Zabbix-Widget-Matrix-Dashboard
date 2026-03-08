@@ -252,6 +252,7 @@ if ($layout_mode === WidgetForm::LAYOUT_MANUAL) {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
+            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_PILL, WidgetForm::NODE_THEME_BOX),
             'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
@@ -304,6 +305,7 @@ else {
         $nodes[$i] = [
             'label' => trim((string) ($data['node'.$i.'_label'] ?? '')),
             'type' => $clampInt($data['node'.$i.'_type'] ?? 0, 0, 8, 0),
+            'theme' => $clampInt($data['node'.$i.'_theme'] ?? WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_BOX, WidgetForm::NODE_THEME_PILL, WidgetForm::NODE_THEME_BOX),
             'hostid' => $normalizeId($data['node'.$i.'_hostid'] ?? ''),
             'host' => trim((string) ($data['node'.$i.'_host'] ?? '')),
             'cpu' => trim((string) ($data['node'.$i.'_cpu_value'] ?? '')),
@@ -387,6 +389,7 @@ $svg->setAttribute('viewBox', '0 0 1000 700');
 $svg->setAttribute('preserveAspectRatio', 'none');
 
 $link_labels_layer = (new CDiv())->addClass('mf-link-label-layer');
+$link_lane_counts = [];
 
 for ($i = 1; $i <= $link_count; $i++) {
     $from = $clampInt($data['link'.$i.'_from'] ?? '', 1, $node_count, 1);
@@ -451,7 +454,12 @@ for ($i = 1; $i <= $link_count; $i++) {
         $end_y   -= ($dy >= 0) ? $node_box_h : -$node_box_h;
     }
 
-    $lane = (($i % 5) - 2) * 18;
+    $pair_key = ($from < $to) ? ($from.'-'.$to) : ($to.'-'.$from);
+    $lane_index = $link_lane_counts[$pair_key] ?? 0;
+    $link_lane_counts[$pair_key] = $lane_index + 1;
+    $lane_direction = ($lane_index % 2 === 0) ? 1 : -1;
+    $lane_level = (int) floor($lane_index / 2) + 1;
+    $lane = $lane_direction * (10 + ($lane_level * 12));
     $path_d = '';
     $label_points = [];
 
@@ -593,22 +601,13 @@ for ($i = 1; $i <= $link_count; $i++) {
         $applyDrilldown($label_box, $link_url);
 
         if ($label !== '') {
-            $label_box->addItem((new CDiv($shortText($label, 12)))->addClass('mf-link-title'));
+            $label_box->addItem((new CDiv($shortText($label, 16)))->addClass('mf-link-title'));
         }
 
-        $mini = (new CDiv())->addClass('mf-link-items');
-
-        if ($in_value !== '') $mini->addItem((new CDiv('IN '.$in_value))->addClass('mf-link-item-line'));
-        if ($out_value !== '') $mini->addItem((new CDiv('OUT '.$out_value))->addClass('mf-link-item-line'));
-
-        if ($in_value === '' && $out_value === '') {
-            $mini->addItem((new CDiv('No traffic'))->addClass('mf-link-item-line'));
-        }
-
-        $label_box->addItem($mini);
-
-        $problems_text = $errors_value !== '' ? 'Problems '.$errors_value : ($has_error ? 'Problems !' : 'Problems 0');
-        $label_box->addItem((new CDiv($problems_text))->addClass('mf-link-problem'));
+        $flow = (new CDiv())->addClass('mf-link-flow');
+        $flow->addItem((new CDiv('IN '.($in_value !== '' ? $in_value : '-')))->addClass('mf-link-flow-chip'));
+        $flow->addItem((new CDiv('OUT '.($out_value !== '' ? $out_value : '-')))->addClass('mf-link-flow-chip'));
+        $label_box->addItem($flow);
 
         $bottom_metrics = (new CDiv())->addClass('mf-link-bottom');
         if ($loss_value !== '') $bottom_metrics->addItem((new CDiv('LOSS '.$loss_value))->addClass('mf-link-bottom-chip'));
@@ -621,8 +620,8 @@ for ($i = 1; $i <= $link_count; $i++) {
         $label_box->setAttribute(
             'style',
             '--mf-link-color: '.$style['color'].'; left: calc('.round($mx / 10, 2).'%' .
-            ' - 58px); top: calc('.round($my / 7, 2).'%' .
-            ' - 52px);'
+            ' - 74px); top: calc('.round($my / 7, 2).'%' .
+            ' - 24px);'
         );
 
         $link_labels_layer->addItem($label_box);
@@ -656,7 +655,7 @@ for ($i = 1; $i <= $node_count; $i++) {
     $type_meta = $getNodeTypeMeta($nodes[$i]['type']);
 
     $node = (new CDiv())
-        ->addClass('mf-node'.($nodes[$i]['has_error'] ? ' mf-node-error' : ''))
+        ->addClass('mf-node mf-node-theme-'.$nodes[$i]['theme'].($nodes[$i]['has_error'] ? ' mf-node-error' : ''))
         ->setAttribute('style', 'left: '.$nodes[$i]['x'].'%; top: '.$nodes[$i]['y'].'%;');
 
     $node_url = $getDrilldownUrl($nodes[$i]['hostid']);
