@@ -359,9 +359,9 @@
 
 .mf-spark-group-box {
     position: absolute;
-    min-width: 134px;
-    max-width: 194px;
-    padding: 7px 9px;
+    min-width: 112px;
+    max-width: 156px;
+    padding: 5px 7px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.86);
     border: 1px solid rgba(255,255,255,0.08);
@@ -372,15 +372,15 @@
 }
 
 .mf-spark-group-title {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
     letter-spacing: 0.03em;
 }
 
 .mf-spark-group-item {
-    font-size: 10px;
-    line-height: 1.35;
+    font-size: 9px;
+    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -541,7 +541,7 @@
     }
 
     .mf-spark-group-box {
-        max-width: 164px;
-        min-width: 120px;
+        max-width: 142px;
+        min-width: 102px;
     }
 }
