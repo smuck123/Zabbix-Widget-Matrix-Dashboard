@@ -29,6 +29,11 @@ class WidgetForm extends CWidgetForm {
     public const LINK_STYLE_ELBOW = 0;
     public const LINK_STYLE_STRAIGHT = 1;
     public const LINK_STYLE_CURVED = 2;
+    public const LINK_STYLE_EXPLOSIVE = 3;
+    public const LINK_STYLE_DOTS = 4;
+    public const LINK_STYLE_JUMPING = 5;
+    public const LINK_STYLE_FILE_TRANSFER = 6;
+    public const LINK_STYLE_ZIGZAG = 7;
 
     public const LINK_DRILLDOWN_AUTO = 0;
     public const LINK_DRILLDOWN_GRAPH = 1;
@@ -49,6 +54,9 @@ class WidgetForm extends CWidgetForm {
     public const NODE_THEME_GLASS = 1;
     public const NODE_THEME_TERMINAL = 2;
     public const NODE_THEME_PILL = 3;
+    public const NODE_THEME_NEON = 4;
+    public const NODE_THEME_PANEL = 5;
+    public const NODE_THEME_OUTLINE = 6;
 
     public const MATRIX_SPEED_SLOW = 0;
     public const MATRIX_SPEED_NORMAL = 1;
@@ -126,7 +134,12 @@ class WidgetForm extends CWidgetForm {
         return [
             self::LINK_STYLE_ELBOW => 'Elbow',
             self::LINK_STYLE_STRAIGHT => 'Straight',
-            self::LINK_STYLE_CURVED => 'Curved'
+            self::LINK_STYLE_CURVED => 'Curved',
+            self::LINK_STYLE_EXPLOSIVE => 'Explosive',
+            self::LINK_STYLE_DOTS => 'Dots',
+            self::LINK_STYLE_JUMPING => 'Jumping',
+            self::LINK_STYLE_FILE_TRANSFER => 'File transfer',
+            self::LINK_STYLE_ZIGZAG => 'Zigzag'
         ];
     }
 
@@ -165,7 +178,10 @@ class WidgetForm extends CWidgetForm {
             self::NODE_THEME_BOX => 'Box',
             self::NODE_THEME_GLASS => 'Glass',
             self::NODE_THEME_TERMINAL => 'Terminal',
-            self::NODE_THEME_PILL => 'Pill'
+            self::NODE_THEME_PILL => 'Pill',
+            self::NODE_THEME_NEON => 'Neon',
+            self::NODE_THEME_PANEL => 'Panel',
+            self::NODE_THEME_OUTLINE => 'Outline'
         ];
     }
 
